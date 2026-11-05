@@ -1,0 +1,17 @@
+{
+    "name": "rest-api",
+    "title": "REST-API",
+    "version": "0.0.1",
+    "description": "Stateless REST-API mit Swagger-UI (nur für angemeldete Benutzer). API-Schlüssel erzeugen: \"DOMAIN/api-schluessel\"; Dokumentation und Test: \"DOMAIN/api/docs\"",
+    "author": "Florian <UltimateG4ming> Berger",
+    "requires": {
+        "xtipp": "1.0.35",
+        "xtipp_max": "1.0.35"
+    },
+    "provider": "FlorianBerger\\RestApi\\RestApiServiceProvider",
+    "autoload": {
+        "psr-4": {
+            "FlorianBerger\\RestApi\\": "src/"
+        }
+    }
+}

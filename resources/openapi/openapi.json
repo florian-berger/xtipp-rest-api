@@ -1,0 +1,1355 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "xTIPP REST API",
+    "version": "1.0.0",
+    "description": "Stateless REST API of the tippgame xTIPP.\n\n**Authentication:** create your API key on the page `/api-schluessel` (one key per user) and send it in every request as `Authorization: Bearer <key>`. There is no session and no username/password. In this documentation click **Authorize** and paste the key, then use **Try it out**. Revoke, regenerate or delete the key on the key page at any time.\n\n**Basics:** all answers are JSON. Successful answers have the content in `data`. Errors have a `message` (and `errors` for invalid input). Limit: 60 requests per minute and key.\n\n**Like the website:** only the leagues made available by the administrator can be used, and an endpoint answers with 403 when the administrator has hidden the matching page of the website (e.g. tipping, tip overview, ranking).\n\n**Where to start:** `GET /leagues` → `GET /leagues/{league}/seasons` → `GET /seasons/{season}/matchdays` → the other calls."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Leagues"
+    },
+    {
+      "name": "Matchdays"
+    },
+    {
+      "name": "Tips"
+    },
+    {
+      "name": "Rankings"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/leagues": {
+      "get": {
+        "tags": [
+          "Leagues"
+        ],
+        "operationId": "listLeagues",
+        "summary": "List all leagues",
+        "description": "All leagues which the administrator made available, sorted by name. The league id is needed for seasons and the all-time ranking. Leagues, seasons and games of other leagues answer with 404.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The leagues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/League"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/leagues/{league}/seasons": {
+      "get": {
+        "tags": [
+          "Leagues"
+        ],
+        "operationId": "listSeasons",
+        "summary": "List the seasons of a league",
+        "description": "The newest season first.",
+        "parameters": [
+          {
+            "name": "league",
+            "in": "path",
+            "required": true,
+            "description": "Id of the league (see `GET /leagues`).",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The seasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Season"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/seasons/{season}/matchdays": {
+      "get": {
+        "tags": [
+          "Matchdays"
+        ],
+        "operationId": "listMatchdays",
+        "summary": "List the matchdays and rounds of a season",
+        "description": "The `key` of an entry is the identifier of the matchday in all further calls. It is the same list as in the tip page of the website. `current` marks the matchday the website shows by default.",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "path",
+            "required": true,
+            "description": "Id of the season (see `GET /leagues/{league}/seasons`).",
+            "schema": {
+              "type": "integer",
+              "example": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The matchdays and rounds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Matchday"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/seasons/{season}/matchdays/{matchday}": {
+      "get": {
+        "tags": [
+          "Matchdays"
+        ],
+        "operationId": "getMatchday",
+        "summary": "Get a matchday or round with its games",
+        "description": "The games sorted by kickoff.",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "path",
+            "required": true,
+            "description": "Id of the season (see `GET /leagues/{league}/seasons`).",
+            "schema": {
+              "type": "integer",
+              "example": 12
+            }
+          },
+          {
+            "name": "matchday",
+            "in": "path",
+            "required": true,
+            "description": "Key of a matchday or round of the season (see `GET /seasons/{season}/matchdays`), for example `matchday_5` or `round_12-13`.",
+            "schema": {
+              "type": "string",
+              "example": "matchday_5"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The matchday with its games",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MatchdayWithGames"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/seasons/{season}/matchdays/{matchday}/tips": {
+      "get": {
+        "tags": [
+          "Tips"
+        ],
+        "operationId": "getOwnTips",
+        "summary": "Get your own tips of a matchday or round",
+        "description": "Every game with your tip (`null` if you did not tip). `points` of a tip is `null` as long as the game has not started.",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "path",
+            "required": true,
+            "description": "Id of the season (see `GET /leagues/{league}/seasons`).",
+            "schema": {
+              "type": "integer",
+              "example": 12
+            }
+          },
+          {
+            "name": "matchday",
+            "in": "path",
+            "required": true,
+            "description": "Key of a matchday or round of the season (see `GET /seasons/{season}/matchdays`), for example `matchday_5` or `round_12-13`.",
+            "schema": {
+              "type": "string",
+              "example": "matchday_5"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Games with your tips",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OwnTip"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/seasons/{season}/matchdays/{matchday}/overview": {
+      "get": {
+        "tags": [
+          "Tips"
+        ],
+        "operationId": "getTipOverview",
+        "summary": "Get the tip overview of a matchday or round",
+        "description": "Per game your own tip, the tips of all other users and the distribution of the tips. Like on the website, **the tips of other users are only visible when the deadline of the game is reached** (`tips_visible`), before that `tips` is empty. `allocation` is `null` if the website would not show it (setting of the administrator).",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "path",
+            "required": true,
+            "description": "Id of the season (see `GET /leagues/{league}/seasons`).",
+            "schema": {
+              "type": "integer",
+              "example": 12
+            }
+          },
+          {
+            "name": "matchday",
+            "in": "path",
+            "required": true,
+            "description": "Key of a matchday or round of the season (see `GET /seasons/{season}/matchdays`), for example `matchday_5` or `round_12-13`.",
+            "schema": {
+              "type": "string",
+              "example": "matchday_5"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OverviewGame"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/seasons/{season}/ranking": {
+      "get": {
+        "tags": [
+          "Rankings"
+        ],
+        "operationId": "getSeasonRanking",
+        "summary": "Get the single ranking of a season",
+        "description": "Without parameters the whole season. With `from` and/or `to` (keys of the matchday list) only the matchdays/rounds in between, with the same meaning as in the ranking page of the website. Users with equal values share a place; the next place is skipped (1, 1, 3).",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "path",
+            "required": true,
+            "description": "Id of the season (see `GET /leagues/{league}/seasons`).",
+            "schema": {
+              "type": "integer",
+              "example": 12
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Key of the first matchday or round, default: the first of the season.",
+            "schema": {
+              "type": "string",
+              "example": "matchday_1"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Key of the last matchday or round, default: the last of the season.",
+            "schema": {
+              "type": "string",
+              "example": "matchday_5"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The ranking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SeasonRankingRow"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/leagues/{league}/ranking/all-time": {
+      "get": {
+        "tags": [
+          "Rankings"
+        ],
+        "operationId": "getAllTimeRanking",
+        "summary": "Get the all-time ranking of a league",
+        "description": "The sums over all seasons of the league.",
+        "parameters": [
+          {
+            "name": "league",
+            "in": "path",
+            "required": true,
+            "description": "Id of the league (see `GET /leagues`).",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The all-time ranking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RankingRow"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/games/{game}/tip": {
+      "put": {
+        "tags": [
+          "Tips"
+        ],
+        "operationId": "putTip",
+        "summary": "Create or change your tip of a game",
+        "description": "Creates the tip, or replaces it if there is one already, so the call can be repeated safely. Both goals `null` delete the tip. The same rules as on the website apply: deadline of the game, and no draw for knockout games when the result after extra time counts.",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "path",
+            "required": true,
+            "description": "Id of the game.",
+            "schema": {
+              "type": "integer",
+              "example": 345
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tip changed or unchanged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TipResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Tip created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TipResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "The deadline of the game is reached or the game has started, the tip can not be changed anymore.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "The data are being synchronized, try again in a moment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TipInput"
+              },
+              "examples": {
+                "tip": {
+                  "summary": "Tip 2:1",
+                  "value": {
+                    "home_goals": 2,
+                    "guest_goals": 1
+                  }
+                },
+                "delete": {
+                  "summary": "Delete the tip",
+                  "value": {
+                    "home_goals": null,
+                    "guest_goals": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tips"
+        ],
+        "operationId": "deleteTip",
+        "summary": "Delete your tip of a game",
+        "description": "Removes your tip. Does nothing if there is none.",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "path",
+            "required": true,
+            "description": "Id of the game.",
+            "schema": {
+              "type": "integer",
+              "example": 345
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The tip does not exist (anymore)."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "The deadline of the game is reached or the game has started, the tip can not be changed anymore.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "The data are being synchronized, try again in a moment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "The API key from `/api-schluessel` (starts with `xtk_`)."
+      }
+    },
+    "schemas": {
+      "League": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Bundesliga"
+          },
+          "type": {
+            "type": "string",
+            "nullable": true,
+            "example": "club"
+          },
+          "gender": {
+            "type": "string",
+            "nullable": true,
+            "example": "male"
+          },
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "example": "BL1"
+          },
+          "current_season_id": {
+            "type": "integer",
+            "nullable": true,
+            "example": 12
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "gender",
+          "code",
+          "current_season_id"
+        ]
+      },
+      "Season": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 12
+          },
+          "league_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "2026/2027"
+          }
+        },
+        "required": [
+          "id",
+          "league_id",
+          "name"
+        ]
+      },
+      "Matchday": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "matchday_5"
+          },
+          "name": {
+            "type": "string",
+            "example": "5. Spieltag"
+          },
+          "current": {
+            "type": "boolean"
+          },
+          "has_table": {
+            "type": "boolean",
+            "description": "The matchday is part of a round with a league table."
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "current",
+          "has_table"
+        ]
+      },
+      "Team": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "nullable": true,
+            "example": 7
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "example": "FC Example"
+          },
+          "placeholder": {
+            "type": "string",
+            "nullable": true,
+            "description": "Shown as long as the team is not known (for example `Winner of game 3`).",
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "placeholder"
+        ]
+      },
+      "Result": {
+        "type": "object",
+        "properties": {
+          "home": {
+            "type": "integer",
+            "example": 2
+          },
+          "away": {
+            "type": "integer",
+            "example": 1
+          }
+        },
+        "required": [
+          "home",
+          "away"
+        ]
+      },
+      "Game": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 345
+          },
+          "round": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string",
+                "nullable": true,
+                "example": "Gruppenphase"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "kickoff": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-11-07T15:30:00+01:00"
+          },
+          "status": {
+            "type": "string",
+            "description": "For example `scheduled`, `planned`, `live`, `finished`, `cancelled`, `aborted`.",
+            "example": "scheduled"
+          },
+          "home": {
+            "$ref": "#/components/schemas/Team"
+          },
+          "away": {
+            "$ref": "#/components/schemas/Team"
+          },
+          "result": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Result"
+              }
+            ],
+            "nullable": true,
+            "description": "The result which counts for the points (depends on the setting for the playing time). `null` as long as the game has not started."
+          },
+          "deadline_reached": {
+            "type": "boolean",
+            "description": "`true`: the tip can not be changed anymore."
+          }
+        },
+        "required": [
+          "id",
+          "round",
+          "kickoff",
+          "status",
+          "home",
+          "away",
+          "result",
+          "deadline_reached"
+        ]
+      },
+      "MatchdayWithGames": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "matchday_5"
+          },
+          "name": {
+            "type": "string"
+          },
+          "games": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Game"
+            }
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "games"
+        ]
+      },
+      "Tip": {
+        "type": "object",
+        "properties": {
+          "home_goals": {
+            "type": "integer",
+            "example": 2
+          },
+          "guest_goals": {
+            "type": "integer",
+            "example": 1
+          },
+          "points": {
+            "type": "integer",
+            "nullable": true,
+            "description": "`null` as long as the game has not started."
+          }
+        },
+        "required": [
+          "home_goals",
+          "guest_goals",
+          "points"
+        ]
+      },
+      "OwnTip": {
+        "type": "object",
+        "properties": {
+          "game": {
+            "$ref": "#/components/schemas/Game"
+          },
+          "tip": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tip"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "game",
+          "tip"
+        ]
+      },
+      "TipResult": {
+        "type": "object",
+        "properties": {
+          "game": {
+            "$ref": "#/components/schemas/Game"
+          },
+          "tip": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tip"
+              }
+            ],
+            "nullable": true,
+            "description": "`null` if the tip was deleted."
+          }
+        },
+        "required": [
+          "game",
+          "tip"
+        ]
+      },
+      "TipInput": {
+        "type": "object",
+        "properties": {
+          "home_goals": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99,
+            "nullable": true,
+            "example": 2
+          },
+          "guest_goals": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99,
+            "nullable": true,
+            "example": 1
+          }
+        },
+        "required": [
+          "home_goals",
+          "guest_goals"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 42
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "example": "Max Mustermann"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "OtherTip": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "user": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "required": [
+              "user"
+            ]
+          },
+          {
+            "$ref": "#/components/schemas/Tip"
+          }
+        ]
+      },
+      "AllocationPart": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "percentage": {
+            "type": "number",
+            "format": "float",
+            "example": 33.33
+          }
+        },
+        "required": [
+          "count",
+          "percentage"
+        ]
+      },
+      "Allocation": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "home": {
+            "$ref": "#/components/schemas/AllocationPart"
+          },
+          "draw": {
+            "$ref": "#/components/schemas/AllocationPart"
+          },
+          "away": {
+            "$ref": "#/components/schemas/AllocationPart"
+          }
+        },
+        "required": [
+          "total",
+          "home",
+          "draw",
+          "away"
+        ]
+      },
+      "OverviewGame": {
+        "type": "object",
+        "properties": {
+          "game": {
+            "$ref": "#/components/schemas/Game"
+          },
+          "own_tip": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tip"
+              }
+            ],
+            "nullable": true
+          },
+          "tips_visible": {
+            "type": "boolean",
+            "description": "`true` when the deadline of the game is reached and the tips of the other users are listed."
+          },
+          "tips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OtherTip"
+            },
+            "description": "Tips of the other users, sorted by name. Empty as long as `tips_visible` is `false`."
+          },
+          "allocation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Allocation"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "game",
+          "own_tip",
+          "tips_visible",
+          "tips",
+          "allocation"
+        ]
+      },
+      "RankingRow": {
+        "type": "object",
+        "properties": {
+          "place": {
+            "type": "integer",
+            "example": 1
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "tips": {
+            "type": "integer",
+            "description": "Number of tips"
+          },
+          "result": {
+            "type": "integer",
+            "description": "Tips with the exact result"
+          },
+          "difference": {
+            "type": "integer",
+            "description": "Tips with the right goal difference"
+          },
+          "tendency": {
+            "type": "integer",
+            "description": "Tips with the right tendency"
+          },
+          "extra": {
+            "type": "integer",
+            "description": "Extra points"
+          },
+          "bonus": {
+            "type": "integer",
+            "description": "Points of the bonus questions"
+          },
+          "points": {
+            "type": "integer",
+            "description": "All points"
+          }
+        },
+        "required": [
+          "place",
+          "user",
+          "tips",
+          "result",
+          "difference",
+          "tendency",
+          "extra",
+          "bonus",
+          "points"
+        ]
+      },
+      "SeasonRankingRow": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RankingRow"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "current_matchday_points": {
+                "type": "integer",
+                "description": "Points of the user at the current matchday/round."
+              }
+            },
+            "required": [
+              "current_matchday_points"
+            ]
+          }
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Not found."
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "The home goals field must be present."
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "message"
+        ]
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "The API key is missing, unknown, revoked or expired, or the user is not active.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            },
+            "description": "`Bearer error=\"invalid_token\"`"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Too many requests (60 per minute and key) or too many failed attempts.",
+        "headers": {
+          "Retry-After": {
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The resource does not exist.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Invalid": {
+        "description": "The input is not valid.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The function is disabled on this website (the administrator has hidden the matching page, e.g. the tip overview or the all-time ranking).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}
