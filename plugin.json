@@ -1,7 +1,7 @@
 {
     "name": "rest-api",
     "title": "REST-API",
-    "version": "0.0.1",
+    "version": "0.0.0-dev",
     "description": "Stateless REST-API mit Swagger-UI (nur für angemeldete Benutzer). API-Schlüssel erzeugen: \"DOMAIN/api-schluessel\"; Dokumentation und Test: \"DOMAIN/api/docs\"",
     "author": "Florian <UltimateG4ming> Berger",
     "requires": {
@@ -13,5 +13,16 @@
         "psr-4": {
             "FlorianBerger\\RestApi\\": "src/"
         }
-    }
+    },
+    "settings": [
+        {
+            "key": "rate_limit",
+            "label": "Anfragen pro Minute",
+            "type": "number",
+            "default": 60,
+            "min": 1,
+            "max": 10000,
+            "help": "Höchstzahl der Anfragen pro Minute und API-Schlüssel (Standardwert: 60). Weitere Anfragen werden mit 429 abgelehnt."
+        }
+    ]
 }
