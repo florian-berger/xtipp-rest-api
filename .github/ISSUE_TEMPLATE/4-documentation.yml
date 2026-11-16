@@ -1,0 +1,36 @@
+name: Documentation
+description: Something is wrong, missing or unclear in the README, the OpenAPI description or the Swagger UI.
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - README
+        - OpenAPI description / Swagger UI (/api/docs)
+        - Key page texts (/api-schluessel)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Section / endpoint
+      placeholder: "README → Removing the plugin, or GET /api/v1/seasons/{season}/ranking"
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing?
+      description: For a difference between documentation and real behavior, show both (remove API keys).
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested text
+      description: Optional, how it should read.
