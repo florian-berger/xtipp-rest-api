@@ -3,7 +3,7 @@
   "info": {
     "title": "xTIPP REST API",
     "version": "1.0.0",
-    "description": "Stateless REST API of the tippgame xTIPP.\n\n**Authentication:** create your API key on the page `/api-schluessel` (one key per user) and send it in every request as `Authorization: Bearer <key>`. There is no session and no username/password. In this documentation click **Authorize** and paste the key, then use **Try it out**. Revoke, regenerate or delete the key on the key page at any time.\n\n**Basics:** all answers are JSON. Successful answers have the content in `data`. Errors have a `message` (and `errors` for invalid input). Limit: 60 requests per minute and key.\n\n**Like the website:** only the leagues made available by the administrator can be used, and an endpoint answers with 403 when the administrator has hidden the matching page of the website (e.g. tipping, tip overview, ranking).\n\n**Where to start:** `GET /leagues` → `GET /leagues/{league}/seasons` → `GET /seasons/{season}/matchdays` → the other calls."
+    "description": "Stateless REST API of the tippgame xTIPP.\n\n**Authentication:** create your API key on the page `/api-schluessel` (one key per user) and send it in every request as `Authorization: Bearer <key>`. There is no session and no username/password. In this documentation click **Authorize** and paste the key, then use **Try it out**. Revoke, regenerate or delete the key on the key page at any time.\n\n**Basics:** all answers are JSON. Successful answers have the content in `data`. Errors have a `message` (and `errors` for invalid input). Limit: 60 requests per minute and key.\n\n**Like the website:** only the leagues made available by the administrator can be used, and an endpoint answers with 403 when the administrator has hidden the matching page of the website (e.g. tipping, bonus, tip overview, ranking).\n\n**Where to start:** `GET /leagues` → `GET /leagues/{league}/seasons` → `GET /seasons/{season}/matchdays` → the other calls."
   },
   "servers": [
     {
@@ -22,6 +22,9 @@
     },
     {
       "name": "Rankings"
+    },
+    {
+      "name": "Bonus questions"
     }
   ],
   "security": [
@@ -743,6 +746,483 @@
           }
         ]
       }
+    },
+    "/seasons/{season}/bonus-questions": {
+      "get": {
+        "tags": [
+          "Bonus questions"
+        ],
+        "operationId": "getBonusQuestions",
+        "summary": "Bonus questions of a season with your answers",
+        "description": "All bonus questions of the season, sorted by question like on the website, with your answers. Needs the page \"Bonus\" (`/tippen/bonus`).",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "path",
+            "required": true,
+            "description": "Id of the season.",
+            "schema": {
+              "type": "integer",
+              "example": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bonus questions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BonusQuestion"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bonus-questions/{bonus}": {
+      "get": {
+        "tags": [
+          "Bonus questions"
+        ],
+        "operationId": "getBonusQuestion",
+        "summary": "One bonus question with your answers",
+        "parameters": [
+          {
+            "name": "bonus",
+            "in": "path",
+            "required": true,
+            "description": "Id of the bonus question.",
+            "schema": {
+              "type": "integer",
+              "example": 17
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bonus question",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BonusQuestion"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bonus-questions/{bonus}/clubs": {
+      "get": {
+        "tags": [
+          "Bonus questions"
+        ],
+        "operationId": "getBonusClubs",
+        "summary": "Clubs/countries which can be chosen",
+        "description": "Like the selection on the website: the teams of the round of the question, otherwise the teams of the season. For a question of type `club` the `id` is the answer. For a question of type `player` use the `id` with `GET /bonus-questions/{bonus}/players` to find the players.",
+        "parameters": [
+          {
+            "name": "bonus",
+            "in": "path",
+            "required": true,
+            "description": "Id of the bonus question.",
+            "schema": {
+              "type": "integer",
+              "example": 17
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Only names which contain this text.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clubs/countries, sorted by name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BonusChoice"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bonus-questions/{bonus}/players": {
+      "get": {
+        "tags": [
+          "Bonus questions"
+        ],
+        "operationId": "getBonusPlayers",
+        "summary": "Players of a club which can be chosen",
+        "description": "Only for questions of type `player` (otherwise `404`). The `id` of a player is the answer.",
+        "parameters": [
+          {
+            "name": "bonus",
+            "in": "path",
+            "required": true,
+            "description": "Id of the bonus question.",
+            "schema": {
+              "type": "integer",
+              "example": 17
+            }
+          },
+          {
+            "name": "club",
+            "in": "query",
+            "required": true,
+            "description": "Id of a club from `GET /bonus-questions/{bonus}/clubs`.",
+            "schema": {
+              "type": "integer",
+              "example": 7
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Only names which contain this text.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current players of the club, sorted by last name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BonusChoice"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bonus-questions/{bonus}/answers": {
+      "put": {
+        "tags": [
+          "Bonus questions"
+        ],
+        "operationId": "putBonusAnswers",
+        "summary": "Set your answers of a bonus question",
+        "description": "The list replaces all your answers of the question, so the call can be repeated safely. To add an answer, send the given answers together with the new one; to change or remove one, send the list without it. An empty list deletes all answers.\n\nAn answer is the id of a club (type `club`) or of a player (type `player`), see the calls `clubs` and `players`. Not more than `possible_answers`, each only once.\n\n**Points:** the points depend on the time of the answer (see `points` of the question). Like on the website, an answer which you have given already is kept with its time, also when it is sent again.",
+        "parameters": [
+          {
+            "name": "bonus",
+            "in": "path",
+            "required": true,
+            "description": "Id of the bonus question.",
+            "schema": {
+              "type": "integer",
+              "example": 17
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BonusAnswersInput"
+              },
+              "examples": {
+                "one": {
+                  "summary": "One answer",
+                  "value": {
+                    "answers": [
+                      7
+                    ]
+                  }
+                },
+                "several": {
+                  "summary": "Several answers",
+                  "value": {
+                    "answers": [
+                      7,
+                      12
+                    ]
+                  }
+                },
+                "delete": {
+                  "summary": "Delete all answers",
+                  "value": {
+                    "answers": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Answers changed, unchanged or deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BonusQuestion"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "First answers given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BonusQuestion"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "The deadline of the bonus question is reached, the answers can not be changed anymore.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "The data are being synchronized, try again in a moment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Bonus questions"
+        ],
+        "operationId": "deleteBonusAnswers",
+        "summary": "Delete your answers of a bonus question",
+        "description": "Removes all your answers of the question. Does nothing if there are none.",
+        "parameters": [
+          {
+            "name": "bonus",
+            "in": "path",
+            "required": true,
+            "description": "Id of the bonus question.",
+            "schema": {
+              "type": "integer",
+              "example": 17
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The answers do not exist (anymore)."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "The deadline of the bonus question is reached, the answers can not be changed anymore.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "The data are being synchronized, try again in a moment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1248,6 +1728,202 @@
               "current_matchday_points"
             ]
           }
+        ]
+      },
+      "BonusChoice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 7
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "example": "FC Example"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "BonusAnswer": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "integer",
+            "example": 7,
+            "description": "Id of the club or of the player, the value for `PUT .../answers`."
+          },
+          "club": {
+            "allOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "example": 7
+                  },
+                  "name": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "FC Example"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
+              }
+            ],
+            "nullable": true,
+            "description": "The club (type `club`), or the current club of the player (national team in a league of national teams). `null` if unknown."
+          },
+          "player": {
+            "allOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "example": 1234
+                  },
+                  "name": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "Max Example"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
+              }
+            ],
+            "nullable": true,
+            "description": "Only for type `player`."
+          },
+          "points": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Points of this answer. `null` as long as the administrator has not entered the correct answers."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-08-01T18:00:00+02:00",
+            "description": "Time of the answer, it decides the points."
+          }
+        },
+        "required": [
+          "answer",
+          "club",
+          "player",
+          "points",
+          "updated_at"
+        ]
+      },
+      "BonusQuestion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 17
+          },
+          "season_id": {
+            "type": "integer",
+            "example": 12
+          },
+          "question": {
+            "type": "string",
+            "example": "Who will be the champion?"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "club",
+              "player"
+            ],
+            "description": "`club`: the answer is a club/country. `player`: the answer is a player."
+          },
+          "possible_answers": {
+            "type": "integer",
+            "example": 1,
+            "description": "How many answers can be given."
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2027-05-20T18:00:00+02:00",
+            "description": "End of the question as shown on the website."
+          },
+          "points": {
+            "type": "array",
+            "description": "Points for a correct answer, depending on the time of the answer: an answer given before `until` gets `points` (the first entry which fits counts). Answers are possible until the last `until`.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "points": {
+                  "type": "integer",
+                  "example": 10
+                },
+                "until": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2026-08-20T20:30:00+02:00"
+                }
+              },
+              "required": [
+                "points",
+                "until"
+              ]
+            }
+          },
+          "deadline_reached": {
+            "type": "boolean",
+            "description": "`true`: the answers can not be changed anymore."
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BonusAnswer"
+            },
+            "description": "Your answers, empty if none."
+          }
+        },
+        "required": [
+          "id",
+          "season_id",
+          "question",
+          "type",
+          "possible_answers",
+          "end",
+          "points",
+          "deadline_reached",
+          "answers"
+        ]
+      },
+      "BonusAnswersInput": {
+        "type": "object",
+        "properties": {
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "uniqueItems": true,
+            "description": "Ids of clubs or players, at most `possible_answers`. Empty deletes all answers.",
+            "example": [
+              7
+            ]
+          }
+        },
+        "required": [
+          "answers"
         ]
       },
       "Error": {

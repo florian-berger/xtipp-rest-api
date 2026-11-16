@@ -1,5 +1,6 @@
 <?php
 
+use FlorianBerger\RestApi\Http\Controllers\BonusController;
 use FlorianBerger\RestApi\Http\Controllers\LeagueController;
 use FlorianBerger\RestApi\Http\Controllers\MatchdayController;
 use FlorianBerger\RestApi\Http\Controllers\RankingController;
@@ -34,6 +35,16 @@ Route::middleware(['rest-api.json', 'rest-api.auth'])->prefix('api/v1')->group(f
     Route::middleware('rest-api.page:tip-games')->group(function () {
         Route::put('games/{game}/tip', [TipController::class, 'update'])->where('game', '[0-9]{1,15}')->name('plugin-rest-api.api.tip.update');
         Route::delete('games/{game}/tip', [TipController::class, 'destroy'])->where('game', '[0-9]{1,15}')->name('plugin-rest-api.api.tip.delete');
+    });
+
+    // Bonus questions: read the questions and the choices, change the own answers (PUT sets them, DELETE removes them)
+    Route::middleware('rest-api.page:tip-bonus')->group(function () {
+        Route::get('seasons/{season}/bonus-questions', [BonusController::class, 'index'])->where('season', '[0-9]{1,15}')->name('plugin-rest-api.api.bonus');
+        Route::get('bonus-questions/{bonus}', [BonusController::class, 'show'])->where('bonus', '[0-9]{1,15}')->name('plugin-rest-api.api.bonus.show');
+        Route::get('bonus-questions/{bonus}/clubs', [BonusController::class, 'clubs'])->where('bonus', '[0-9]{1,15}')->name('plugin-rest-api.api.bonus.clubs');
+        Route::get('bonus-questions/{bonus}/players', [BonusController::class, 'players'])->where('bonus', '[0-9]{1,15}')->name('plugin-rest-api.api.bonus.players');
+        Route::put('bonus-questions/{bonus}/answers', [BonusController::class, 'update'])->where('bonus', '[0-9]{1,15}')->name('plugin-rest-api.api.bonus.update');
+        Route::delete('bonus-questions/{bonus}/answers', [BonusController::class, 'destroy'])->where('bonus', '[0-9]{1,15}')->name('plugin-rest-api.api.bonus.delete');
     });
 
     // Everything else below /api/v1 answers with JSON, not with the page of the website (xTIPP has a fallback route)
