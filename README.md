@@ -10,8 +10,9 @@ updates of xTIPP.
 
 The interface of the plugin (key page) is in German, like xTIPP itself. The API and its documentation are in English.
 
-> **Status:** version 0.0.1. Made for and pinned to xTIPP 1.0.35 (`xtipp_max` in `plugin.json`), because it uses
+> **Status:** Made for and pinned to xTIPP 1.0.35 (`xtipp_max` in `plugin.json`), because it uses
 > internal classes of xTIPP (`Ranking`, `Season`, `Game`, `Bonus`, `BonusTip`, `TipPointCalculation`, `SendTipConfirmationEmail`).
+> If you're using the plugin, wait with the xTIPP update until this plugin is updated.
 
 ## Features
 
