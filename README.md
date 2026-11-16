@@ -28,7 +28,13 @@ The interface of the plugin (key page) is in German, like xTIPP itself. The API 
 2. Activate it in the admin area under **Konfiguration → Erweiterungen**. This runs the migration, which creates the table `plugin_rest_api_keys`.
 3. Link to `/api-schluessel` from somewhere (for example a news entry): xTIPP has no place where a plugin can add a menu entry (yet).
 
-There are no settings. To switch the API off, disable the plugin.
+Settings (admin area, **Konfiguration → Erweiterungen**, settings of the plugin):
+
+| Setting | Default | Purpose |
+|---|---|---|
+| Anfragen pro Minute (`rate_limit`) | 60 | Maximum number of requests per minute and API key (1 to 10000). More requests answer `429`. |
+
+To switch the API off, disable the plugin.
 
 ## Pages
 
@@ -80,7 +86,7 @@ All paths start with `/api/v1`. All answers are JSON, the content is in `data`. 
 `{matchday}` is a key of the matchday list, for example `matchday_5` or `round_12-13`, exactly like on the website. Start with `GET /leagues`, then the seasons, then the matchdays.
 
 Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` function disabled by the administrator (see below), `404` unknown id (also for leagues, seasons, games and bonus questions of leagues which are not available), `409` deadline of the game or bonus question reached,
-`422` invalid input, `423` the data are synchronized at the moment, `429` too many requests (60 per minute and key; 10 failed attempts per minute and address).
+`422` invalid input, `423` the data are synchronized at the moment, `429` too many requests (60 per minute and key by default, see settings; 10 failed attempts per minute and address).
 
 ### Rules worth knowing
 

@@ -3,6 +3,7 @@ namespace FlorianBerger\RestApi\Http\Middleware;
 
 use Closure;
 use FlorianBerger\RestApi\Services\ApiKeyService;
+use FlorianBerger\RestApi\Services\PluginSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,13 +17,14 @@ class AuthenticateApiKey {
     /** Failed attempts per IP and minute */
     private const MAX_FAILURES = 10;
 
-    /** Calls per key and minute */
-    private const MAX_CALLS = 60;
-
     /**
-     * @param ApiKeyService $keys
+     * @param ApiKeyService  $keys
+     * @param PluginSettings $settings
      */
-    public function __construct(private readonly ApiKeyService $keys) {
+    public function __construct(
+        private readonly ApiKeyService $keys,
+        private readonly PluginSettings $settings,
+    ) {
     }
 
     /**
@@ -63,9 +65,9 @@ class AuthenticateApiKey {
             return response()->json(['message' => 'The service is in maintenance mode.'], 503);
         }
 
-        // Fixed limit per key, not configurable (done here, so it does not depend on the order of the middleware)
+        // Limit per key from the settings of the plugin (done here, so it does not depend on the order of the middleware)
         $limitKey = 'rest-api-calls:' . $apiKey->id;
-        if (RateLimiter::tooManyAttempts($limitKey, self::MAX_CALLS)) {
+        if (RateLimiter::tooManyAttempts($limitKey, $this->settings->rateLimit())) {
             return response()->json(['message' => 'Too many requests.'], 429, [
                 'Retry-After' => RateLimiter::availableIn($limitKey),
             ]);
