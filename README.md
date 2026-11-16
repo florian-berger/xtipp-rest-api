@@ -11,12 +11,13 @@ updates of xTIPP.
 The interface of the plugin (key page) is in German, like xTIPP itself. The API and its documentation are in English.
 
 > **Status:** version 0.0.1. Made for and pinned to xTIPP 1.0.35 (`xtipp_max` in `plugin.json`), because it uses
-> internal classes of xTIPP (`Ranking`, `Season`, `Game`, `TipPointCalculation`, `SendTipConfirmationEmail`).
+> internal classes of xTIPP (`Ranking`, `Season`, `Game`, `Bonus`, `BonusTip`, `TipPointCalculation`, `SendTipConfirmationEmail`).
 
 ## Features
 
 - Read leagues, seasons, matchdays/rounds with their games, your own tips, the tip overview and the rankings (single season and all-time).
 - Create, change and delete your own tips, with the same rules as the tip page (deadline, no draw tips for knockout games when the extra time counts, e-mail confirmation).
+- Read the bonus questions and give, change and delete your own answers, with the same rules as the bonus page (deadline, clubs/players which can be chosen, number of answers).
 - Authentication with a personal API key as Bearer token. No username and password, no session, no cookie.
 - Every user has one key and manages it on an own page: create, regenerate, revoke, delete. An optional expiry date can be set.
 - Swagger UI with the complete description of the API, for logged-in users only. All calls can be tried out there.
@@ -69,10 +70,16 @@ All paths start with `/api/v1`. All answers are JSON, the content is in `data`. 
 | GET | `/leagues/{league}/ranking/all-time` | All-time ranking of a league |
 | PUT | `/games/{game}/tip` | Create or change your tip (`{"home_goals": 2, "guest_goals": 1}`), both `null` delete it |
 | DELETE | `/games/{game}/tip` | Delete your tip |
+| GET | `/seasons/{season}/bonus-questions` | Bonus questions of a season with your answers |
+| GET | `/bonus-questions/{bonus}` | One bonus question with your answers |
+| GET | `/bonus-questions/{bonus}/clubs?search=` | Clubs/countries which can be chosen for a question |
+| GET | `/bonus-questions/{bonus}/players?club=&search=` | Players of a club which can be chosen (questions of type `player`) |
+| PUT | `/bonus-questions/{bonus}/answers` | Set your answers (`{"answers": [7, 12]}`), an empty list deletes them |
+| DELETE | `/bonus-questions/{bonus}/answers` | Delete your answers |
 
 `{matchday}` is a key of the matchday list, for example `matchday_5` or `round_12-13`, exactly like on the website. Start with `GET /leagues`, then the seasons, then the matchdays.
 
-Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` function disabled by the administrator (see below), `404` unknown id (also for leagues, seasons and games of leagues which are not available), `409` deadline of the game reached,
+Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` function disabled by the administrator (see below), `404` unknown id (also for leagues, seasons, games and bonus questions of leagues which are not available), `409` deadline of the game or bonus question reached,
 `422` invalid input, `423` the data are synchronized at the moment, `429` too many requests (60 per minute and key; 10 failed attempts per minute and address).
 
 ### Rules worth knowing
@@ -86,6 +93,7 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
   |---|---|
   | matchdays, one matchday | tipping, tip overview or single ranking (at least one) |
   | own tips, `PUT`/`DELETE` tip | tipping (`/tippen`) |
+  | bonus questions, clubs, players, `PUT`/`DELETE` answers | bonus (`/tippen/bonus`) |
   | overview | tip overview (`/tippen/uebersicht`) |
   | ranking of a season | single ranking (`/rangliste`) |
   | all-time ranking | all-time ranking (`/rangliste/ewige-rangliste`) |
@@ -93,6 +101,7 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
 - **Users** in answers contain only `id` and the display name the website shows. No e-mail addresses.
 - **Ranking:** users with equal values share a place and the next place is skipped (1, 1, 3). `current_matchday_points` are the points at the current matchday/round.
 - **Tips:** `PUT` can be repeated safely. A game which started or reached its deadline answers `409`.
+- **Bonus questions:** an answer is the id of a club (type `club`) or of a player (type `player`). `PUT` replaces all your answers of the question (add one: send the given answers plus the new one; remove one: send the list without it) and can be repeated safely. The points depend on the time of the answer, so an answer which is sent again keeps its time, like on the website. Answers are possible until the last deadline of the question (`points[].until`), afterwards `409`. The answers of other users (bonus overview) are not part of the API.
 
 ## Security notes
 
@@ -105,7 +114,7 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
 
 ## Limitations
 
-- Not covered: bonus questions, tip groups, messages, news, profiles, administration.
+- Not covered: the bonus overview (answers of other users), tip groups, messages, news, profiles, administration.
 - The API depends on internal classes of xTIPP and is pinned to 1.0.35. Check it after an update of xTIPP.
 - A key has the full rights of its user, there are no scopes.
 
