@@ -3,7 +3,7 @@
   "info": {
     "title": "xTIPP REST API",
     "version": "1.0.0",
-    "description": "Stateless REST API of the tippgame xTIPP.\n\n**Authentication:** create your API key on the page `/api-schluessel` (one key per user) and send it in every request as `Authorization: Bearer <key>`. There is no session and no username/password. In this documentation click **Authorize** and paste the key, then use **Try it out**. Revoke, regenerate or delete the key on the key page at any time.\n\n**Basics:** all answers are JSON. Successful answers have the content in `data`. Errors have a `message` (and `errors` for invalid input). Limit: 60 requests per minute and key.\n\n**Like the website:** only the leagues made available by the administrator can be used, and an endpoint answers with 403 when the administrator has hidden the matching page of the website (e.g. tipping, bonus, tip overview, ranking).\n\n**Where to start:** `GET /leagues` → `GET /leagues/{league}/seasons` → `GET /seasons/{season}/matchdays` → the other calls."
+    "description": "Stateless REST API of the tippgame xTIPP.\n\n**Authentication:** create your API key on the page `/api-schluessel` (one key per user) and send it in every request as `Authorization: Bearer <key>`. There is no session and no username/password. In this documentation click **Authorize** and paste the key, then use **Try it out**. Revoke, regenerate or delete the key on the key page at any time.\n\n**Basics:** all answers are JSON. Successful answers have the content in `data`. Errors have a `message` (and `errors` for invalid input). Limit: {rate_limit} requests per minute and key (set by the administrator).\n\n**Like the website:** only the leagues made available by the administrator can be used, and an endpoint answers with 403 when the administrator has hidden the matching page of the website (e.g. tipping, bonus, tip overview, ranking).\n\n**Where to start:** `GET /leagues` → `GET /leagues/{league}/seasons` → `GET /seasons/{season}/matchdays` → the other calls."
   },
   "servers": [
     {
@@ -1980,7 +1980,7 @@
         }
       },
       "TooManyRequests": {
-        "description": "Too many requests (60 per minute and key) or too many failed attempts.",
+        "description": "Too many requests ({rate_limit} per minute and key) or too many failed attempts.",
         "headers": {
           "Retry-After": {
             "schema": {

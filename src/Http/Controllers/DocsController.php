@@ -2,6 +2,7 @@
 namespace FlorianBerger\RestApi\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use FlorianBerger\RestApi\Services\PluginSettings;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -34,10 +35,14 @@ class DocsController extends Controller {
     /**
      * The description of the API as OpenAPI document
      *
+     * @param PluginSettings $settings
+     *
      * @return JsonResponse
      */
-    public function spec(): JsonResponse {
-        $spec = json_decode((string) file_get_contents(__DIR__ . '/../../../resources/openapi/openapi.json'), true, 512, JSON_THROW_ON_ERROR);
+    public function spec(PluginSettings $settings): JsonResponse {
+        // The limit is set by the administrator, the document contains a placeholder
+        $json = str_replace('{rate_limit}', (string) $settings->rateLimit(), (string) file_get_contents(__DIR__ . '/../../../resources/openapi/openapi.json'));
+        $spec = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
         // The address of the installation, which can be in a subdirectory
         $spec['servers'] = [['url' => url('/api/v1')]];
