@@ -1,0 +1,53 @@
+name: xTIPP compatibility
+description: A new xTIPP version was released, or the plugin does not work with your xTIPP version.
+title: "[Compatibility]: xTIPP "
+labels: ["compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The plugin uses internal classes of xTIPP (`Ranking`, `Season`, `Game`, `TipPointCalculation`, `SendTipConfirmationEmail`)
+        and is therefore pinned to one xTIPP version (`xtipp` / `xtipp_max` in `plugin.json`).
+        Use this template to ask for support of a new xTIPP version or to report a break after an update.
+
+  - type: input
+    id: xtipp-version
+    attributes:
+      label: xTIPP version
+      description: The xTIPP version that should be supported.
+      placeholder: "1.0.36"
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: "0.0.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: state
+    attributes:
+      label: Current state
+      options:
+        - The plugin cannot be activated (version check of xTIPP)
+        - The plugin is active, but errors occur
+        - The plugin is active, but results differ from the website (points, ranking, tips)
+        - Not tested yet, just asking for support
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Error messages, log lines, endpoints that fail. Remove API keys and personal data.
+      render: shell
+
+  - type: input
+    id: changelog
+    attributes:
+      label: Changelog of xTIPP
+      description: Link to the release notes of the xTIPP version, if available.

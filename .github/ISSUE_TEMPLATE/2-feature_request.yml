@@ -1,0 +1,69 @@
+name: Feature request
+description: Suggest a new endpoint, a new function or an improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your idea! Please describe the use case, not only the solution: it helps to find the best way to build it.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type of request
+      options:
+        - New endpoint / new data (for example bonus questions, tip groups, news, profiles)
+        - Extension of an existing endpoint (more fields, filters, sorting, paging)
+        - Authentication / API keys (for example scopes, several keys, read-only keys)
+        - Key page (/api-schluessel)
+        - Swagger UI / OpenAPI description
+        - Configuration / administration
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What do you want to do, and why is it not possible (or hard) today?
+      placeholder: "I build a small app for my tippgame and want to show the bonus questions ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should it work? For a new endpoint, give the method, path and an example answer if possible.
+      placeholder: |
+        GET /api/v1/seasons/{season}/bonus-questions
+        {
+          "data": [ ... ]
+        }
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other solutions or workarounds you considered.
+
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules and privacy
+      description: |
+        Should the data follow a rule of the website (deadline, visibility of other tips, hidden pages, available leagues)?
+        Does it contain data of other users? The API only returns `id` and display name of other users, never e-mail addresses.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched the existing issues and this feature was not requested yet.
+          required: true
+        - label: I would like to help building or testing this feature.

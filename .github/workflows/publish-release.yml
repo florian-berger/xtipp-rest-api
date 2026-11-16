@@ -1,0 +1,68 @@
+name: Publish new release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 1.2.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Determine version from tag
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="${INPUT_VERSION#v}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Write version to plugin.json
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          jq --indent 4 --arg version "$VERSION" '.version = $version' plugin.json > plugin.json.tmp
+          mv plugin.json.tmp plugin.json
+          cat plugin.json
+
+      - name: Create ZIP archive
+        id: zip
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          ZIP_NAME="rest-api-${VERSION}.zip"
+          zip -r "$RUNNER_TEMP/$ZIP_NAME" . -x '.git/*' '.github/*'
+          unzip -l "$RUNNER_TEMP/$ZIP_NAME"
+          echo "path=$RUNNER_TEMP/$ZIP_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Upload ZIP as workflow artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.zip.outputs.path }}
+          archive: false
+
+      - name: Create draft release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v3
+        with:
+          draft: true
+          name: Version ${{ steps.version.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          files: ${{ steps.zip.outputs.path }}

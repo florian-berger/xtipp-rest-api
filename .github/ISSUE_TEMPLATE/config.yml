@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/florian-berger/xtipp-rest-api/security/advisories/new
+    about: Please report security problems (for example key leaks, access to data of other users or of hidden leagues) privately, not as a public issue.
+  - name: Question / help
+    url: https://xcript.de/forum/index.php?thread/9447-restful-api-version-0-0-1/
+    about: Questions about installation or usage are answered fastest in the plugin thread in the xTIPP forum.
+  - name: Alternative questions
+    url: https://ultgmng.de/discord
+    about: If you don't want to use the xTIPP forum, you can also ask questions about this plugin on Discord.
+  - name: Problem with xTIPP itself
+    url: https://xcript.de/
+    about: Bugs of xTIPP that also happen without this plugin belong to the xTIPP developers, not here.
