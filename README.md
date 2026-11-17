@@ -87,7 +87,7 @@ All paths start with `/api/v1`. All answers are JSON, the content is in `data`. 
 `{matchday}` is a key of the matchday list, for example `matchday_5` or `round_12-13`, exactly like on the website. Start with `GET /leagues`, then the seasons, then the matchdays.
 
 Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` function disabled by the administrator (see below), `404` unknown id (also for leagues, seasons, games and bonus questions of leagues which are not available), `409` deadline of the game or bonus question reached,
-`422` invalid input, `423` the data are synchronized at the moment, `429` too many requests (60 per minute and key by default, see settings; 10 failed attempts per minute and address).
+`422` invalid input, `423` the data are synchronized at the moment, `429` too many requests (60 per minute and key by default, see settings; 10 failed attempts per minute and address; a valid key is not blocked by failed attempts of others).
 
 ### Rules worth knowing
 

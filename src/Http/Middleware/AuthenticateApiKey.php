@@ -34,14 +34,6 @@ class AuthenticateApiKey {
      * @return Response
      */
     public function handle(Request $request, Closure $next): Response {
-        // Slow down guessing
-        $failureKey = 'rest-api-failures:' . $request->ip();
-        if (RateLimiter::tooManyAttempts($failureKey, self::MAX_FAILURES)) {
-            return response()->json(['message' => 'Too many failed attempts.'], 429, [
-                'Retry-After' => RateLimiter::availableIn($failureKey),
-            ]);
-        }
-
         // The same answer for every reason, so that nothing is revealed about keys
         $apiKey = null;
         $user   = null;
@@ -55,6 +47,16 @@ class AuthenticateApiKey {
 
         // Inactive or deleted users can not use the API (the web middleware "IsActive" does not run here)
         if ($user === null || $user->trashed() || !$user->active) {
+            // Slow down guessing. Only failed attempts are limited, so that other users behind the same address
+            // can not lock out a valid key. A valid key never resets the counter, otherwise calls with an own
+            // key could be mixed in to bypass the limit.
+            $failureKey = 'rest-api-failures:' . $request->ip();
+            if (RateLimiter::tooManyAttempts($failureKey, self::MAX_FAILURES)) {
+                return response()->json(['message' => 'Too many failed attempts.'], 429, [
+                    'Retry-After' => RateLimiter::availableIn($failureKey),
+                ]);
+            }
+            
             RateLimiter::hit($failureKey, 60);
 
             return $this->unauthorized();
