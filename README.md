@@ -114,6 +114,7 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
 
 - Only the SHA-256 hash of a key is stored. A key is random with 256 bit, so a fast hash is sufficient.
 - The API does not use the middleware group `web` (no session, no cookie, no CSRF), so the API cannot be called with the browser login of a user. Active user, deleted user and maintenance mode are checked by the plugin itself.
+- Answers of the API set no cookie. Cookies that xTIPP sets itself on every request (e.g. `xtipp-current-league-id`) are removed from API answers.
 - Answers of the API are marked `Cache-Control: no-store, private`.
 - A new key is shown directly in the answer of the form (`Cache-Control: no-store`). It is never written to the session, which xTIPP stores unencrypted.
 - There are no CORS headers. Browser applications on another address cannot call the API.
