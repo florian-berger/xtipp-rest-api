@@ -36,4 +36,13 @@ class PluginSettings {
 
         return max(self::MIN_RATE_LIMIT, min(self::MAX_RATE_LIMIT, (int) $value));
     }
+
+    /**
+     * Only calls over HTTPS are allowed (enabled, unless the administrator disabled it)
+     *
+     * @return bool
+     */
+    public function requireHttps(): bool {
+        return $this->plugins->setting(self::PLUGIN, 'require_https', true) !== false;
+    }
 }

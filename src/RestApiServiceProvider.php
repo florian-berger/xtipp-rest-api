@@ -3,6 +3,7 @@ namespace FlorianBerger\RestApi;
 
 use FlorianBerger\RestApi\Http\Middleware\AuthenticateApiKey;
 use FlorianBerger\RestApi\Http\Middleware\ForceJson;
+use FlorianBerger\RestApi\Http\Middleware\RequireHttps;
 use FlorianBerger\RestApi\Http\Middleware\RequirePage;
 use FlorianBerger\RestApi\Http\Middleware\WithoutCookies;
 use Illuminate\Routing\Router;
@@ -23,6 +24,7 @@ class RestApiServiceProvider extends ServiceProvider {
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('rest-api.no-cookies', WithoutCookies::class);
         $router->aliasMiddleware('rest-api.json', ForceJson::class);
+        $router->aliasMiddleware('rest-api.https', RequireHttps::class);
         $router->aliasMiddleware('rest-api.auth', AuthenticateApiKey::class);
         $router->aliasMiddleware('rest-api.page', RequirePage::class);
 

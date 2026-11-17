@@ -23,6 +23,13 @@
             "min": 1,
             "max": 10000,
             "help": "Höchstzahl der Anfragen pro Minute und API-Schlüssel (Standardwert: 60). Weitere Anfragen werden mit 429 abgelehnt."
+        },
+        {
+            "key": "require_https",
+            "label": "Nur HTTPS erlauben",
+            "type": "checkbox",
+            "default": true,
+            "help": "Anfragen über unverschlüsseltes HTTP werden mit 403 abgelehnt, damit API-Schlüssel nicht im Klartext übertragen werden (empfohlen). Hinter einem Proxy, der TLS beendet, muss der Webserver HTTPS=on an PHP übergeben."
         }
     ]
 }

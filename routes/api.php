@@ -13,9 +13,12 @@ use Illuminate\Support\Facades\Route;
 // "rest-api.no-cookies" removes cookies set by xTIPP itself (e.g. "xtipp-current-league-id"). It is the first one, so
 // that it also covers the answers of the other middleware (401, 429, 503).
 //
+// "rest-api.https" rejects calls over plain HTTP (setting "require_https"). It must come before "rest-api.auth", so
+// that a key sent without encryption is not processed.
+//
 // "rest-api.page:..." makes an endpoint available only, when the page of the website with the same content is visible
 // for the user (internal types of the pages, see PageHelper::defaultPageSettings()). It must come after "rest-api.auth".
-Route::middleware(['rest-api.no-cookies', 'rest-api.json', 'rest-api.auth'])->prefix('api/v1')->group(function () {
+Route::middleware(['rest-api.no-cookies', 'rest-api.json', 'rest-api.https', 'rest-api.auth'])->prefix('api/v1')->group(function () {
     // Leagues and seasons (only the available leagues, needed for every other call)
     Route::get('leagues', [LeagueController::class, 'index'])->name('plugin-rest-api.api.leagues');
     Route::get('leagues/{league}/seasons', [LeagueController::class, 'seasons'])->where('league', '[0-9]{1,15}')->name('plugin-rest-api.api.seasons');
