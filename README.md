@@ -34,6 +34,7 @@ Settings (admin area, **Konfiguration → Erweiterungen**, settings of the plugi
 | Setting | Default | Purpose |
 |---|---|---|
 | Anfragen pro Minute (`rate_limit`) | 60 | Maximum number of requests per minute and API key (1 to 10000). More requests answer `429`. |
+| Nur HTTPS erlauben (`require_https`) | on | Requests over plain HTTP answer `403` before the API key is processed. Disable it only if your setup cannot pass `HTTPS=on` to PHP (see security notes). |
 
 To switch the API off, disable the plugin.
 
@@ -86,7 +87,7 @@ All paths start with `/api/v1`. All answers are JSON, the content is in `data`. 
 
 `{matchday}` is a key of the matchday list, for example `matchday_5` or `round_12-13`, exactly like on the website. Start with `GET /leagues`, then the seasons, then the matchdays.
 
-Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` function disabled by the administrator (see below), `404` unknown id (also for leagues, seasons, games and bonus questions of leagues which are not available), `409` deadline of the game or bonus question reached,
+Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` function disabled by the administrator (see below) or request not made over HTTPS, `404` unknown id (also for leagues, seasons, games and bonus questions of leagues which are not available), `409` deadline of the game or bonus question reached,
 `422` invalid input, `423` the data are synchronized at the moment, `429` too many requests (60 per minute and key by default, see settings; 10 failed attempts per minute and address; a valid key is not blocked by failed attempts of others).
 
 ### Rules worth knowing
@@ -114,6 +115,8 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
 
 - Only the SHA-256 hash of a key is stored. A key is random with 256 bit, so a fast hash is sufficient.
 - The API does not use the middleware group `web` (no session, no cookie, no CSRF), so the API cannot be called with the browser login of a user. Active user, deleted user and maintenance mode are checked by the plugin itself.
+- Only HTTPS is allowed by default (setting `require_https`), so API keys are not sent in clear text. A request over HTTP answers `403` and its key is not processed. A client that already sent its key over HTTP should regenerate it.
+- HTTPS behind a reverse proxy or load balancer that terminates TLS: xTIPP does not configure Laravel's `TrustProxies`, and this cannot be changed permanently, because it lives in the xTIPP core which would get lost during update. The plugin therefore ignores `X-Forwarded-Proto` and relies on the server variable `HTTPS`. Let the web server pass it to PHP, for example `fastcgi_param HTTPS on;` (nginx) or `SetEnvIf X-Forwarded-Proto https HTTPS=on` (Apache). xTIPP's own redirect to the `https` address in `app.url` uses the same check, so a site where that redirect works passes this check as well.
 - Answers of the API set no cookie. Cookies that xTIPP sets itself on every request (e.g. `xtipp-current-league-id`) are removed from API answers.
 - Answers of the API are marked `Cache-Control: no-store, private`.
 - A new key is shown directly in the answer of the form (`Cache-Control: no-store`). It is never written to the session, which xTIPP stores unencrypted.
