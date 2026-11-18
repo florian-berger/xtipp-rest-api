@@ -27,7 +27,7 @@ The interface of the plugin (key page) is in German, like xTIPP itself. The API 
 
 1. Upload the folder to `plugins/rest-api/` of your xTIPP installation. Check that **all files** arrived.
 2. Activate it in the admin area under **Konfiguration → Erweiterungen**. This runs the migration, which creates the table `plugin_rest_api_keys`.
-3. Link to `/api-schluessel` from somewhere (for example a news entry): xTIPP has no place where a plugin can add a menu entry (yet).
+3. Logged-in users find the key page `/api-schluessel` in their profile menu ("API-Schlüssel"), no link has to be added.
 
 Settings (admin area, **Konfiguration → Erweiterungen**, settings of the plugin):
 
@@ -42,7 +42,7 @@ To switch the API off, disable the plugin.
 
 | Address | Who | Purpose |
 |---|---|---|
-| `/api-schluessel` | logged-in users | Create, regenerate, revoke and delete the own API key |
+| `/api-schluessel` | logged-in users | Create, regenerate, revoke and delete the own API key (entry "API-Schlüssel" in the profile menu) |
 | `/api/docs` | logged-in users | Swagger UI |
 | `/api/docs/openapi.json` | logged-in users | The OpenAPI description |
 | `/api/docs/assets/{file}` | logged-in users | CSS/JavaScript of Swagger UI and the script of the key page (the web root is `public/`, so the files of a plugin are delivered by a route; xTIPP blocks inline scripts with its Content-Security-Policy) |
@@ -50,7 +50,7 @@ To switch the API off, disable the plugin.
 
 ## Authentication
 
-1. Open `/api-schluessel` and create your key. It looks like `xtk_...` (256 bit random) and is **shown only once**.
+1. Open `/api-schluessel` (profile menu, "API-Schlüssel") and create your key. It looks like `xtk_...` (256 bit random) and is **shown only once**.
 2. Send it with every call:
 
 ```
