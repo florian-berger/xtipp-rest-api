@@ -10,7 +10,7 @@ updates of xTIPP.
 
 The interface of the plugin (key page) is in German, like xTIPP itself. The API and its documentation are in English.
 
-> **Status:** Made for and pinned to xTIPP 1.0.35 (`xtipp_max` in `plugin.json`), because it uses
+> **Status:** Made for and pinned to xTIPP 1.0.36 (`xtipp_max` in `plugin.json`), because it uses
 > internal classes of xTIPP (`Ranking`, `Season`, `Game`, `Bonus`, `BonusTip`, `TipPointCalculation`, `SendTipConfirmationEmail`).
 > If you're using the plugin, wait with the xTIPP update until this plugin is updated.
 
@@ -126,7 +126,7 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
 ## Limitations
 
 - Not covered: the bonus overview (answers of other users), tip groups, messages, news, profiles, administration.
-- The API depends on internal classes of xTIPP and is pinned to 1.0.35. Check it after an update of xTIPP.
+- The API depends on internal classes of xTIPP and is pinned to 1.0.36. Check it after an update of xTIPP.
 - A key has the full rights of its user, there are no scopes.
 
 ## Removing the plugin

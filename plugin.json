@@ -5,8 +5,8 @@
     "description": "Stateless REST-API mit Swagger-UI (nur für angemeldete Benutzer). API-Schlüssel erzeugen: \"DOMAIN/api-schluessel\"; Dokumentation und Test: \"DOMAIN/api/docs\"",
     "author": "Florian <UltimateG4ming> Berger",
     "requires": {
-        "xtipp": "1.0.35",
-        "xtipp_max": "1.0.35"
+        "xtipp": "1.0.36",
+        "xtipp_max": "1.0.36"
     },
     "provider": "FlorianBerger\\RestApi\\RestApiServiceProvider",
     "autoload": {
