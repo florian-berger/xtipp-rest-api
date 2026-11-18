@@ -6,6 +6,8 @@ use App\Models\Game\Game;
 use App\Models\Tip\Tip;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Create, change and delete the tip of a user, with the same rules as the tip page of the website
@@ -83,9 +85,15 @@ class TipUpdater {
             return self::UPDATED;
         });
 
-        // The confirmation is sent delayed for all changes together, like for the website
+        // The confirmation is sent delayed for all changes together (one e-mail per competition), like for the automatic
+        // saving of the website. A failure must not answer with an error: the tip is stored already, and with the queue
+        // driver "sync" the e-mail is sent within this request.
         if ($result !== self::UNCHANGED && $user->email_tip_confirmation === 1) {
-            SendTipConfirmationEmail::schedule($user, [$game->id]);
+            try {
+                SendTipConfirmationEmail::schedule($user, [$game->id]);
+            } catch (Throwable $exception) {
+                Log::error('REST-API: tip confirmation for user ' . $user->id . ' failed: ' . $exception->getMessage());
+            }
         }
 
         return $result;
