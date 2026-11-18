@@ -29,7 +29,7 @@
             "label": "Nur HTTPS erlauben",
             "type": "checkbox",
             "default": true,
-            "help": "Anfragen über unverschlüsseltes HTTP werden mit 403 abgelehnt, damit API-Schlüssel nicht im Klartext übertragen werden (empfohlen). Hinter einem Proxy, der TLS beendet, muss der Webserver HTTPS=on an PHP übergeben."
+            "help": "Anfragen über unverschlüsseltes HTTP werden mit 403 abgelehnt, damit API-Schlüssel nicht im Klartext übertragen werden (empfohlen). Hinter einem Proxy, der TLS beendet, den Proxy in der .env mit TRUSTED_PROXIES eintragen (oder der Webserver übergibt HTTPS=on an PHP)."
         }
     ]
 }

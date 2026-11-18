@@ -9,9 +9,10 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Reject calls over plain HTTP, before the API key is processed (setting "require_https", enabled by default).
  *
- * xTIPP does not register TrustProxies, so isSecure() ignores "X-Forwarded-Proto" and only checks the server variable
- * "HTTPS". Behind a proxy that terminates TLS, the web server must pass "HTTPS=on" to PHP. The core depends on this as
- * well: its middleware CheckHttpsProtocol redirects with the same check, when "app.url" uses https.
+ * isSecure() checks the server variable "HTTPS" and, since xTIPP 1.0.36, also "X-Forwarded-Proto" of the proxies in
+ * TRUSTED_PROXIES (".env", global middleware TrustProxies of xTIPP, which runs before this one). Behind a proxy that
+ * terminates TLS, the proxy is listed there, or the web server passes "HTTPS=on" to PHP. The core depends on the same
+ * check: its middleware CheckHttpsProtocol redirects with it, when "app.url" uses https.
  */
 class RequireHttps {
     /**
