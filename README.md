@@ -109,7 +109,7 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
 - **Users** in answers contain only `id` and the display name the website shows. No e-mail addresses.
 - **Ranking:** users with equal values share a place and the next place is skipped (1, 1, 3). `current_matchday_points` are the points at the current matchday/round.
 - **Tips:** `PUT` can be repeated safely. A game which started or reached its deadline answers `409`.
-- **Bonus questions:** an answer is the id of a club (type `club`) or of a player (type `player`). `PUT` replaces all your answers of the question (add one: send the given answers plus the new one; remove one: send the list without it) and can be repeated safely. The points depend on the time of the answer, so an answer which is sent again keeps its time, like on the website. Answers are possible until the last deadline of the question (`points[].until`), afterwards `409`. The answers of other users (bonus overview) are not part of the API.
+- **Bonus questions:** an answer is the id of a club (type `club`) or of a player (type `player`). `PUT` replaces all your answers of the question (add one: send the given answers plus the new one; remove one: send the list without it) and can be repeated safely. The points depend on the time of the answer, so an answer which is sent again keeps its time, like on the website. Every answer counts only once: an answer stored twice (e.g. by an old import) is listed once and the extra row is removed with the next `PUT`. Answers are possible until the last deadline of the question (`points[].until`), afterwards `409`. The answers of other users (bonus overview) are not part of the API.
 
 ## Security notes
 
