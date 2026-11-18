@@ -94,8 +94,8 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
 
 - **Leagues:** only the leagues in the setting "available leagues" can be used. Other leagues, their seasons and their
   games answer `404`, as if they did not exist.
-- **Pages:** an endpoint answers `403`, when the administrator has hidden the matching page of the website for the user
-  (or its parent menu entry):
+- **Pages:** an endpoint answers `403`, when the administrator has hidden the matching page of the website for the user.
+  Like on the website, only the page itself counts, not its parent menu entry:
 
   | Endpoint | Page |
   |---|---|
