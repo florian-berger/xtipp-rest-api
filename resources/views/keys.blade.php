@@ -8,11 +8,16 @@
         {{ trans('rest-api::ui.keys.title') }}
     </div>
 
-    <p class="mt-2">{!! trans('rest-api::ui.keys.intro') !!}</p>
-    <p class="mt-2 text-sm text-gray-500">{{ trans('rest-api::ui.keys.warning') }}</p>
     <p class="mt-2">
-        <a href="{{ url('/api/docs') }}" class="link-normal">{{ trans('rest-api::ui.keys.docs') }}</a>
+        {!! trans('rest-api::ui.keys.intro') !!}
+        {!! trans('rest-api::ui.keys.docs', [
+            'link' => '<a href="' . e(route('plugin-rest-api.docs')) . '" class="link-normal">' . e(trans('rest-api::ui.keys.docs-link')) . '</a>',
+        ]) !!}
     </p>
+    {{-- Same look as the warnings of xTIPP (layouts.messages), only classes of the CSS of xTIPP are available --}}
+    <div id="api-key-secure-warning" class="w-full px-2 py-2 mt-4 bg-yellow-400" role="note">
+        <strong>{{ trans('rest-api::ui.keys.warning-title') }}</strong> {{ trans('rest-api::ui.keys.warning') }}
+    </div>
 
     @if ($newKey !== null)
         {{-- The page is the answer of a POST request: keys.js changes the address to "data-page-url", so a reload shows the key page (without the key) and does not send the form again --}}
