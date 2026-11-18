@@ -82,19 +82,72 @@ class MatchdayResolver {
             return ['matchDays' => [], 'rounds' => []];
         }
 
-        $from ??= $items[0];
-        $to   ??= $items[array_key_last($items)];
-
-        $fromIndex = array_search($from, $items, true);
-        $toIndex   = array_search($to, $items, true);
-        if ($fromIndex === false || $toIndex === false || $fromIndex > $toIndex) {
+        $range = $this->range($items, $from, $to);
+        if ($range === null) {
             return null;
         }
 
         // The whole season needs no filter
-        if ($fromIndex === 0 && $toIndex === array_key_last($items)) {
+        if ($range[0] === 0 && $range[1] === array_key_last($items)) {
             return ['matchDays' => [], 'rounds' => []];
         }
+
+        return $this->filterOfRange($season, $items, ...$range);
+    }
+
+    /**
+     * The selected matchdays/rounds as a filter, also for the whole season (unlike rankingFilter()). The website always
+     * sends a range, so the last played matchday of the selection (column "+" and change of the places) needs it.
+     *
+     * @param Season      $season
+     * @param string|null $from Key of the first matchday/round, null for the start of the season
+     * @param string|null $to   Key of the last matchday/round, null for the end of the season
+     *
+     * @return array{matchDays: array, rounds: array}|null Null, if a key is not a matchday or round of this season
+     */
+    public function selection(Season $season, ?string $from, ?string $to): ?array {
+        $items = array_keys($this->forSeason($season)['items']);
+        if ($items === []) {
+            return ['matchDays' => [], 'rounds' => []];
+        }
+
+        $range = $this->range($items, $from, $to);
+
+        return $range !== null ? $this->filterOfRange($season, $items, ...$range) : null;
+    }
+
+    /**
+     * Positions of the first and the last key in the list of the matchdays/rounds
+     *
+     * @param string[]    $items Keys of the matchdays/rounds
+     * @param string|null $from  Null for the first key
+     * @param string|null $to    Null for the last key
+     *
+     * @return array{0: int, 1: int}|null Null, if a key is unknown or "from" is after "to"
+     */
+    private function range(array $items, ?string $from, ?string $to): ?array {
+        $fromIndex = array_search($from ?? $items[0], $items, true);
+        $toIndex   = array_search($to ?? $items[array_key_last($items)], $items, true);
+        if ($fromIndex === false || $toIndex === false || $fromIndex > $toIndex) {
+            return null;
+        }
+
+        return [$fromIndex, $toIndex];
+    }
+
+    /**
+     * Filter of the ranking from one key to another
+     *
+     * @param Season   $season
+     * @param string[] $items     Keys of the matchdays/rounds
+     * @param int      $fromIndex
+     * @param int      $toIndex
+     *
+     * @return array{matchDays: array, rounds: array}
+     */
+    private function filterOfRange(Season $season, array $items, int $fromIndex, int $toIndex): array {
+        $from = $items[$fromIndex];
+        $to   = $items[$toIndex];
 
         // The ranking is filtered either by match days or by rounds
         [$fromType, $fromIdentifier] = explode('_', $from, 2);

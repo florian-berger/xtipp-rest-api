@@ -1721,11 +1721,19 @@
             "properties": {
               "current_matchday_points": {
                 "type": "integer",
-                "description": "Points of the user at the current matchday/round."
+                "nullable": true,
+                "description": "Points of the user at the last played matchday/round of the selection (`from`/`to`), like the column \"+\" of the website. `null`, if no game of the selection has been played."
+              },
+              "place_change": {
+                "type": "integer",
+                "nullable": true,
+                "description": "Change of the place by the last played matchday/round of the selection: positive = places gained, negative = places lost. `null`, if nothing was played before this matchday or the user was not in the ranking before.",
+                "example": 2
               }
             },
             "required": [
-              "current_matchday_points"
+              "current_matchday_points",
+              "place_change"
             ]
           }
         ]
