@@ -45,7 +45,7 @@ To switch the API off, disable the plugin.
 | `/api-schluessel` | logged-in users | Create, regenerate, revoke and delete the own API key |
 | `/api/docs` | logged-in users | Swagger UI |
 | `/api/docs/openapi.json` | logged-in users | The OpenAPI description |
-| `/api/docs/assets/{file}` | logged-in users | CSS/JavaScript of Swagger UI (the web root is `public/`, so the files of a plugin are delivered by a route) |
+| `/api/docs/assets/{file}` | logged-in users | CSS/JavaScript of Swagger UI and the script of the key page (the web root is `public/`, so the files of a plugin are delivered by a route; xTIPP blocks inline scripts with its Content-Security-Policy) |
 | `/api/v1/...` | holders of a key | The API |
 
 ## Authentication

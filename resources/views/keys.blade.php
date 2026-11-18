@@ -15,20 +15,17 @@
     </p>
 
     @if ($newKey !== null)
-        <div class="mt-5 p-3 bg-slate-200">
+        {{-- The page is the answer of a POST request: keys.js changes the address to "data-page-url", so a reload shows the key page (without the key) and does not send the form again --}}
+        <div id="rest-api-new-key-box" class="mt-5 p-3 bg-slate-200" data-page-url="{{ route('plugin-rest-api.keys') }}">
             <div class="font-bold">{{ trans('rest-api::ui.keys.new-title') }}</div>
             <div class="flex flex-wrap items-center gap-2 mt-2">
-                <input id="rest-api-new-key" type="text" class="input-normal-gray w-full md:w-3/4 font-mono" value="{{ $newKey }}" readonly autocomplete="off" spellcheck="false" onfocus="this.select()">
-                <button type="button" class="btn-small" onclick="var i = document.getElementById('rest-api-new-key'); i.select(); if (navigator.clipboard) { navigator.clipboard.writeText(i.value); }">{{ trans('rest-api::ui.keys.btn.copy') }}</button>
+                <input id="rest-api-new-key" type="text" class="input-normal-gray w-full md:w-3/4 font-mono" value="{{ $newKey }}" readonly autocomplete="off" spellcheck="false">
+                <button id="rest-api-copy-key" type="button" class="btn-small">{{ trans('rest-api::ui.keys.btn.copy') }}</button>
             </div>
             <p class="mt-2 text-sm">{{ trans('rest-api::ui.keys.new-hint') }}</p>
         </div>
-        {{-- The page is the answer of a POST request: a reload must show the key page (without the key) and must not send the form again --}}
-        <script>
-            if (window.history && window.history.replaceState) {
-                window.history.replaceState(null, '', @json(route('plugin-rest-api.keys')));
-            }
-        </script>
+        {{-- No inline script: xTIPP sends a Content-Security-Policy --}}
+        <script src="{{ route('plugin-rest-api.docs.asset', ['file' => 'keys.js']) }}"></script>
     @endif
 
     @if ($apiKey === null)
