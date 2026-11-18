@@ -2,6 +2,7 @@
 namespace FlorianBerger\RestApi\Http\Controllers;
 
 use App\Enums\RankingSortType;
+use App\Models\Game\Game;
 use App\Models\Ranking\Ranking;
 use App\Models\Ranking\RankingSort;
 use App\Models\Round\Round;
@@ -9,6 +10,7 @@ use App\Models\Season\Season;
 use App\Models\User;
 use FlorianBerger\RestApi\Services\MatchdayResolver;
 use FlorianBerger\RestApi\Services\Presenter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -46,15 +48,31 @@ class RankingController extends ApiController {
             'from' => ['nullable', 'string', 'max:100'],
             'to'   => ['nullable', 'string', 'max:100'],
         ]);
-        $filter = $this->matchdays->rankingFilter($seasonModel, $query['from'] ?? null, $query['to'] ?? null)
-            ?? $this->fail(422, 'The matchdays "from" and "to" must be keys of the matchday list of this season, "from" not after "to".');
+        $filter    = $this->matchdays->rankingFilter($seasonModel, $query['from'] ?? null, $query['to'] ?? null);
+        $selection = $this->matchdays->selection($seasonModel, $query['from'] ?? null, $query['to'] ?? null);
+        if ($filter === null || $selection === null) {
+            $this->fail(422, 'The matchdays "from" and "to" must be keys of the matchday list of this season, "from" not after "to".');
+        }
 
         $rows = Ranking::ranking($seasonModel->id, RankingSortType::SINGLE, $filter['matchDays'], $filter['rounds']);
 
-        // The points of the current matchday/round
-        $current = $this->currentPoints($seasonModel);
+        // Like the website since xTIPP 1.0.36: the points of the last played matchday of the selection (none, if the
+        // selection has no played game) and the change of the places by this matchday
+        $lastPlayed     = $this->lastPlayedMatchday($seasonModel, $selection);
+        $points         = $this->matchdayPoints($seasonModel, $lastPlayed);
+        $previousPlaces = $this->previousPlaces($seasonModel, $filter, $lastPlayed);
+        $currentPlaces  = $previousPlaces !== null ? Ranking::calcPlaces($rows) : [];
 
-        return $this->data($this->rows($rows, $current));
+        $output = $this->rows($rows, $points);
+        foreach ($output as $index => $entry) {
+            $userId = $entry['user']['id'];
+
+            $output[$index]['place_change'] = isset($previousPlaces[$userId], $currentPlaces[$userId])
+                ? $previousPlaces[$userId] - $currentPlaces[$userId]
+                : null;
+        }
+
+        return $this->data($output);
     }
 
     /**
@@ -91,12 +109,13 @@ class RankingController extends ApiController {
     /**
      * Rows of the API: place (equal rows share the place, the next place is skipped), user and the sums
      *
-     * @param Collection $rows
-     * @param array      $currentPoints Points of the current matchday/round by user id, null for none
+     * @param Collection      $rows
+     * @param array|null|bool $currentPoints Points of the matchday by user id, null for no points (field is null),
+     *                                       false for a ranking without the field
      *
      * @return array<int, array<string, mixed>>
      */
-    private function rows(Collection $rows, ?array $currentPoints = null): array {
+    private function rows(Collection $rows, array|null|bool $currentPoints = false): array {
         $users = User::withTrashed()->whereIn('id', $rows->pluck('user_id')->unique())->get()->keyBy('id');
 
         $output   = [];
@@ -114,8 +133,8 @@ class RankingController extends ApiController {
             $previous = $values;
 
             $entry = ['place' => $place, 'user' => $this->presenter->user($users->get($row->user_id), (int) $row->user_id)] + $values;
-            if ($currentPoints !== null) {
-                $entry['current_matchday_points'] = (int) ($currentPoints[$row->user_id] ?? 0);
+            if ($currentPoints !== false) {
+                $entry['current_matchday_points'] = $currentPoints !== null ? (int) ($currentPoints[$row->user_id] ?? 0) : null;
             }
             $output[] = $entry;
         }
@@ -124,36 +143,136 @@ class RankingController extends ApiController {
     }
 
     /**
-     * Points of the users at the current matchday/round of a season
-     *
-     * The matchday number is only unique inside a round (e.g. every cup round has the matchday 1), so only the rounds
-     * of the current round group are used.
+     * The live and finished games of a season
      *
      * @param Season $season
      *
-     * @return array<int, int|string>
+     * @return Builder
      */
-    private function currentPoints(Season $season): array {
-        $game = $season->getCurrentOrLastGame();
-        if (!$game) {
-            return [];
+    private function playedGames(Season $season): Builder {
+        return Game::whereHas('Round', fn (Builder $round) => $round->where('season_id', $season->id))
+            ->whereIn('status', ['live', 'finished']);
+    }
+
+    /**
+     * The last played matchday of a selection, like RankingController::getLastPlayedMatchDayOfSelection() of xTIPP
+     *
+     * The matchday number is only unique inside a round (e.g. every cup round can have the matchday 1), so selected
+     * rounds are limited to the last played round group (e.g. all groups of a group phase).
+     *
+     * @param Season $season
+     * @param array  $selection See MatchdayResolver::selection()
+     *
+     * @return array{roundIds: array<int, int>, matchDay: int|null}|null Null without a usable selection, matchDay null
+     *                                                                   if the selection has no played game
+     */
+    private function lastPlayedMatchday(Season $season, array $selection): ?array {
+        $matchDays = $selection['matchDays'];
+
+        // Selected matchdays
+        if (isset($matchDays['to'])) {
+            $matchDay = $this->playedGames($season)
+                ->whereBetween('game_match_day_id', [(int) ($matchDays['from'] ?? 1), (int) $matchDays['to']])
+                ->max('game_match_day_id');
+            if ($matchDay === null) {
+                return ['roundIds' => [], 'matchDay' => null];
+            }
+
+            return [
+                'roundIds' => $this->playedGames($season)->where('game_match_day_id', $matchDay)->distinct()->pluck('round_id')->map(fn ($id) => (int) $id)->all(),
+                'matchDay' => (int) $matchDay,
+            ];
         }
 
-        $round = Round::find($game->round_id);
-        if ($round === null) {
-            return [];
+        // Selected rounds
+        if (empty($selection['rounds']['in'])) {
+            return null;
         }
 
-        $prefix   = DB::getTablePrefix();
-        $roundIds = Round::where('season_id', $season->id)->where('sort_1', $round->sort_1)->pluck('id');
+        $playedRoundIds = $this->playedGames($season)->whereIn('round_id', $selection['rounds']['in'])->distinct()->pluck('round_id');
+        $playedRounds   = Round::whereIn('id', $playedRoundIds)->get();
+        if ($playedRounds->isEmpty()) {
+            return ['roundIds' => [], 'matchDay' => null];
+        }
+
+        // The last played round group and its newest matchday
+        $roundIds = $playedRounds->where('sort_1', $playedRounds->max('sort_1'))->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        return [
+            'roundIds' => $roundIds,
+            'matchDay' => (int) $this->playedGames($season)->whereIn('round_id', $roundIds)->max('game_match_day_id'),
+        ];
+    }
+
+    /**
+     * Points of the users at the last played matchday of the selection, without a usable selection at the current
+     * matchday/round of the season (like RankingController::getActualPointsOfUsers() of xTIPP)
+     *
+     * @param Season     $season
+     * @param array|null $lastPlayed See lastPlayedMatchday()
+     *
+     * @return array<int, int|string>|null Null, if the selection has no played game (no points are shown then)
+     */
+    private function matchdayPoints(Season $season, ?array $lastPlayed): ?array {
+        if ($lastPlayed !== null && $lastPlayed['matchDay'] === null) {
+            return null;
+        }
+
+        if ($lastPlayed !== null) {
+            $roundIds = $lastPlayed['roundIds'];
+            $matchDay = $lastPlayed['matchDay'];
+        } else {
+            // The current round group of the season
+            $game  = $season->getCurrentOrLastGame();
+            $round = $game ? Round::find($game->round_id) : null;
+            if ($round === null) {
+                return [];
+            }
+
+            $roundIds = Round::where('season_id', $season->id)->where('sort_1', $round->sort_1)->pluck('id');
+            $matchDay = $game->game_match_day_id;
+        }
+
+        $prefix = DB::getTablePrefix();
 
         return Ranking::join('ranking_metas', 'ranking_metas.id', '=', 'rankings.ranking_meta_id')
             ->where('ranking_metas.season_id', $season->id)
             ->whereIn('ranking_metas.round_id', $roundIds)
-            ->where('ranking_metas.match_day', $game->game_match_day_id)
+            ->where('ranking_metas.match_day', $matchDay)
             ->groupBy('rankings.user_id')
             ->selectRaw($prefix . 'rankings.user_id, SUM(' . $prefix . 'rankings.points) as points')
             ->pluck('points', 'user_id')
             ->all();
+    }
+
+    /**
+     * Places of the users before the last played matchday of the selection (like
+     * RankingController::getPreviousPlaces() of xTIPP)
+     *
+     * @param Season     $season
+     * @param array      $filter     Filter of the ranking, see MatchdayResolver::rankingFilter()
+     * @param array|null $lastPlayed See lastPlayedMatchday()
+     *
+     * @return array<int, int>|null User id => place, null if nothing was played before this matchday
+     */
+    private function previousPlaces(Season $season, array $filter, ?array $lastPlayed): ?array {
+        if ($lastPlayed === null || $lastPlayed['matchDay'] === null) {
+            return null;
+        }
+
+        $previous = Ranking::ranking(
+            $season->id,
+            RankingSortType::SINGLE,
+            $filter['matchDays'],
+            $filter['rounds'],
+            excludedMatchDay: $lastPlayed,
+        );
+
+        // Without points nothing was played before, and all users would share the first place
+        if (!$previous->contains(fn ($row) => $row->points > 0)) {
+            return null;
+        }
+
+        return Ranking::calcPlaces($previous);
     }
 }

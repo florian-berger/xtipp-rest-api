@@ -2,8 +2,6 @@
 namespace FlorianBerger\RestApi\Services;
 
 use App\Helper\PageHelper;
-use App\Models\Page;
-use Exception;
 
 /**
  * Rules of the administrator, which the website enforces with its middleware and which the API must respect, too:
@@ -37,47 +35,16 @@ class AccessRules {
 
     /**
      * Check, if a page of the website (internal type, see PageHelper::defaultPageSettings()) is visible for the current
-     * user. A page below a parent (e.g. "tip-overview" below "tip-parent") needs a visible parent, too.
+     * user.
+     *
+     * Only the page itself counts, not its parent: since xTIPP 1.0.36 the website checks the most specific page of an
+     * address (e.g. "/rangliste/ewige-rangliste" and not "/rangliste"), see CheckPageVisibility.
      *
      * @param string $internalType
      *
      * @return bool
      */
     public function isPageVisible(string $internalType): bool {
-        if (!PageHelper::isPageVisible($internalType)) {
-            return false;
-        }
-
-        $parent = $this->parentType($internalType);
-
-        return $parent === null || PageHelper::isPageVisible($parent);
-    }
-
-    /**
-     * Internal type of the parent page, null for a page without parent
-     *
-     * @param string $internalType
-     *
-     * @return string|null
-     */
-    private function parentType(string $internalType): ?string {
-        try {
-            $page = Page::where('internal_type', $internalType)->first();
-            if ($page !== null) {
-                if ((int) $page->page_parent === 0) {
-                    return null;
-                }
-
-                $parent = Page::whereKey($page->page_parent)->value('internal_type');
-
-                return is_string($parent) && $parent !== '' ? $parent : null;
-            }
-        } catch (Exception) {
-            // The table is not available, the default settings are used
-        }
-
-        $parent = PageHelper::defaultPageSettings()[$internalType]['page_parent'] ?? '';
-
-        return $parent !== '' ? $parent : null;
+        return PageHelper::isPageVisible($internalType);
     }
 }

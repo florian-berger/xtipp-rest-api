@@ -1,6 +1,7 @@
 <?php
 namespace FlorianBerger\RestApi;
 
+use App\Plugin\PluginExtensions;
 use FlorianBerger\RestApi\Http\Middleware\AuthenticateApiKey;
 use FlorianBerger\RestApi\Http\Middleware\ForceJson;
 use FlorianBerger\RestApi\Http\Middleware\RequireHttps;
@@ -32,6 +33,14 @@ class RestApiServiceProvider extends ServiceProvider {
         $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'rest-api');
         $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'rest-api');
+
+        // Entry of the key page in the profile menu of logged-in users (since xTIPP 1.0.36). The label is a closure,
+        // so it is translated only when the menu is shown.
+        $this->app->make(PluginExtensions::class)->menu('profile', [
+            'label'   => fn () => trans('rest-api::ui.keys.sidename'),
+            'route'   => 'plugin-rest-api.keys',
+            'visible' => 'auth',
+        ]);
 
         // Own tables: The migrations in "database/migrations" run when the plugin is enabled
     }

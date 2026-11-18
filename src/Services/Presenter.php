@@ -174,6 +174,23 @@ class Presenter {
      * @return array<string, mixed>
      */
     public function bonus(Bonus $bonus, Collection $answers, ?string $leagueType): array {
+        // Like the points calculation of xTIPP: every answer only once (the oldest row, further rows with the same
+        // answer e.g. of an old import give no points), and not more answers with points than the question allows
+        $answers       = $answers->sortBy('id')->unique(fn (BonusTip $tip) => (int) $tip->answer)->values();
+        $remainingHits = max(1, (int) $bonus->possible_answers);
+        $presented     = [];
+        foreach ($answers as $tip) {
+            $answer = $this->bonusAnswer($bonus, $tip, $leagueType);
+            if ($answer['points'] !== null && $answer['points'] > 0) {
+                if ($remainingHits > 0) {
+                    $remainingHits--;
+                } else {
+                    $answer['points'] = 0;
+                }
+            }
+            $presented[] = $answer;
+        }
+
         return [
             'id'               => $bonus->id,
             'season_id'        => $bonus->season_id,
@@ -186,7 +203,7 @@ class Presenter {
                 'until'  => $point->point_end?->toIso8601String(),
             ])->values()->all(),
             'deadline_reached' => $bonus->reachedTipDeadline(),
-            'answers'          => $answers->map(fn (BonusTip $tip) => $this->bonusAnswer($bonus, $tip, $leagueType))->values()->all(),
+            'answers'          => $presented,
         ];
     }
 

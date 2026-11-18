@@ -2,11 +2,11 @@
     "name": "rest-api",
     "title": "REST-API",
     "version": "0.0.0-dev",
-    "description": "Stateless REST-API mit Swagger-UI (nur für angemeldete Benutzer). API-Schlüssel erzeugen: \"DOMAIN/api-schluessel\"; Dokumentation und Test: \"DOMAIN/api/docs\"",
+    "description": "Stateless REST-API mit Swagger-UI (nur für angemeldete Benutzer). API-Schlüssel erzeugen: Profilmenü \"API-Schlüssel\" (DOMAIN/api-schluessel); Dokumentation und Test: \"DOMAIN/api/docs\"",
     "author": "Florian <UltimateG4ming> Berger",
     "requires": {
-        "xtipp": "1.0.35",
-        "xtipp_max": "1.0.35"
+        "xtipp": "1.0.36",
+        "xtipp_max": "1.0.36"
     },
     "provider": "FlorianBerger\\RestApi\\RestApiServiceProvider",
     "autoload": {
@@ -29,7 +29,7 @@
             "label": "Nur HTTPS erlauben",
             "type": "checkbox",
             "default": true,
-            "help": "Anfragen über unverschlüsseltes HTTP werden mit 403 abgelehnt, damit API-Schlüssel nicht im Klartext übertragen werden (empfohlen). Hinter einem Proxy, der TLS beendet, muss der Webserver HTTPS=on an PHP übergeben."
+            "help": "Anfragen über unverschlüsseltes HTTP werden mit 403 abgelehnt, damit API-Schlüssel nicht im Klartext übertragen werden (empfohlen). Hinter einem Proxy, der TLS beendet, den Proxy in der .env mit TRUSTED_PROXIES eintragen (oder der Webserver übergibt HTTPS=on an PHP)."
         }
     ]
 }

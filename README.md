@@ -10,7 +10,7 @@ updates of xTIPP.
 
 The interface of the plugin (key page) is in German, like xTIPP itself. The API and its documentation are in English.
 
-> **Status:** Made for and pinned to xTIPP 1.0.35 (`xtipp_max` in `plugin.json`), because it uses
+> **Status:** Made for and pinned to xTIPP 1.0.36 (`xtipp_max` in `plugin.json`), because it uses
 > internal classes of xTIPP (`Ranking`, `Season`, `Game`, `Bonus`, `BonusTip`, `TipPointCalculation`, `SendTipConfirmationEmail`).
 > If you're using the plugin, wait with the xTIPP update until this plugin is updated.
 
@@ -26,8 +26,11 @@ The interface of the plugin (key page) is in German, like xTIPP itself. The API 
 ## Installation
 
 1. Upload the folder to `plugins/rest-api/` of your xTIPP installation. Check that **all files** arrived.
+   Alternatively upload the ZIP of a release (`rest-api-<version>.zip`) in the admin area under **Konfiguration → Erweiterungen**.
+   xTIPP 1.0.36 offers this only when `XTIPP_PLUGIN_UPLOAD=1` is set in its `.env` file. Uploading a newer ZIP also updates
+   the plugin, and the old version is kept in `storage/app/plugin-backups/`.
 2. Activate it in the admin area under **Konfiguration → Erweiterungen**. This runs the migration, which creates the table `plugin_rest_api_keys`.
-3. Link to `/api-schluessel` from somewhere (for example a news entry): xTIPP has no place where a plugin can add a menu entry (yet).
+3. Logged-in users find the key page `/api-schluessel` in their profile menu ("API-Schlüssel"), no link has to be added.
 
 Settings (admin area, **Konfiguration → Erweiterungen**, settings of the plugin):
 
@@ -42,15 +45,15 @@ To switch the API off, disable the plugin.
 
 | Address | Who | Purpose |
 |---|---|---|
-| `/api-schluessel` | logged-in users | Create, regenerate, revoke and delete the own API key |
+| `/api-schluessel` | logged-in users | Create, regenerate, revoke and delete the own API key (entry "API-Schlüssel" in the profile menu) |
 | `/api/docs` | logged-in users | Swagger UI |
 | `/api/docs/openapi.json` | logged-in users | The OpenAPI description |
-| `/api/docs/assets/{file}` | logged-in users | CSS/JavaScript of Swagger UI (the web root is `public/`, so the files of a plugin are delivered by a route) |
+| `/api/docs/assets/{file}` | logged-in users | CSS/JavaScript of Swagger UI and the script of the key page (the web root is `public/`, so the files of a plugin are delivered by a route; xTIPP blocks inline scripts with its Content-Security-Policy) |
 | `/api/v1/...` | holders of a key | The API |
 
 ## Authentication
 
-1. Open `/api-schluessel` and create your key. It looks like `xtk_...` (256 bit random) and is **shown only once**.
+1. Open `/api-schluessel` (profile menu, "API-Schlüssel") and create your key. It looks like `xtk_...` (256 bit random) and is **shown only once**.
 2. Send it with every call:
 
 ```
@@ -88,14 +91,15 @@ All paths start with `/api/v1`. All answers are JSON, the content is in `data`. 
 `{matchday}` is a key of the matchday list, for example `matchday_5` or `round_12-13`, exactly like on the website. Start with `GET /leagues`, then the seasons, then the matchdays.
 
 Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` function disabled by the administrator (see below) or request not made over HTTPS, `404` unknown id (also for leagues, seasons, games and bonus questions of leagues which are not available), `409` deadline of the game or bonus question reached,
-`422` invalid input, `423` the data are synchronized at the moment, `429` too many requests (60 per minute and key by default, see settings; 10 failed attempts per minute and address; a valid key is not blocked by failed attempts of others).
+`422` invalid input, `423` the data are synchronized at the moment, `429` too many requests (60 per minute and key by default, see settings; 10 failed attempts per minute and address; a valid key is not blocked by failed attempts of others),
+`503` maintenance mode (only admins can continue) or the database of xTIPP is not available (then xTIPP answers before the API with a plain HTML page and `Retry-After: 60`, not with JSON).
 
 ### Rules worth knowing
 
 - **Leagues:** only the leagues in the setting "available leagues" can be used. Other leagues, their seasons and their
   games answer `404`, as if they did not exist.
-- **Pages:** an endpoint answers `403`, when the administrator has hidden the matching page of the website for the user
-  (or its parent menu entry):
+- **Pages:** an endpoint answers `403`, when the administrator has hidden the matching page of the website for the user.
+  Like on the website, only the page itself counts, not its parent menu entry:
 
   | Endpoint | Page |
   |---|---|
@@ -107,18 +111,20 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
   | all-time ranking | all-time ranking (`/rangliste/ewige-rangliste`) |
 - **Overview:** like on the website, the tips of other users are only listed when the deadline of the game is reached (`tips_visible`), whatever the status of the game is. Before, only your own tip is returned. The distribution (`allocation`) follows the settings of the administrator for the tip overview and is `null` when the website would not show it.
 - **Users** in answers contain only `id` and the display name the website shows. No e-mail addresses.
-- **Ranking:** users with equal values share a place and the next place is skipped (1, 1, 3). `current_matchday_points` are the points at the current matchday/round.
+- **Ranking:** users with equal values share a place and the next place is skipped (1, 1, 3). Like the website, `current_matchday_points` are the points at the last played matchday/round of the selection (`null` if nothing of the selection has been played), and `place_change` is the change of the place by this matchday (positive = places gained, `null` if nothing was played before).
 - **Tips:** `PUT` can be repeated safely. A game which started or reached its deadline answers `409`.
-- **Bonus questions:** an answer is the id of a club (type `club`) or of a player (type `player`). `PUT` replaces all your answers of the question (add one: send the given answers plus the new one; remove one: send the list without it) and can be repeated safely. The points depend on the time of the answer, so an answer which is sent again keeps its time, like on the website. Answers are possible until the last deadline of the question (`points[].until`), afterwards `409`. The answers of other users (bonus overview) are not part of the API.
+- **Bonus questions:** an answer is the id of a club (type `club`) or of a player (type `player`). `PUT` replaces all your answers of the question (add one: send the given answers plus the new one; remove one: send the list without it) and can be repeated safely. The points depend on the time of the answer, so an answer which is sent again keeps its time, like on the website. Every answer counts only once: an answer stored twice (e.g. by an old import) is listed once and the extra row is removed with the next `PUT`. Answers are possible until the last deadline of the question (`points[].until`), afterwards `409`. The answers of other users (bonus overview) are not part of the API.
 
 ## Security notes
 
 - Only the SHA-256 hash of a key is stored. A key is random with 256 bit, so a fast hash is sufficient.
 - The API does not use the middleware group `web` (no session, no cookie, no CSRF), so the API cannot be called with the browser login of a user. Active user, deleted user and maintenance mode are checked by the plugin itself.
 - Only HTTPS is allowed by default (setting `require_https`), so API keys are not sent in clear text. A request over HTTP answers `403` and its key is not processed. A client that already sent its key over HTTP should regenerate it.
-- HTTPS behind a reverse proxy or load balancer that terminates TLS: xTIPP does not configure Laravel's `TrustProxies`, and this cannot be changed permanently, because it lives in the xTIPP core which would get lost during update. The plugin therefore ignores `X-Forwarded-Proto` and relies on the server variable `HTTPS`. Let the web server pass it to PHP, for example `fastcgi_param HTTPS on;` (nginx) or `SetEnvIf X-Forwarded-Proto https HTTPS=on` (Apache). xTIPP's own redirect to the `https` address in `app.url` uses the same check, so a site where that redirect works passes this check as well.
+- HTTPS behind a reverse proxy or load balancer that terminates TLS: since xTIPP 1.0.36, add the address of the proxy to `TRUSTED_PROXIES` in the `.env` file of xTIPP (e.g. `TRUSTED_PROXIES=172.17.0.1` or a list like `172.17.0.1,10.0.0.0/8`). Then `X-Forwarded-Proto` of this proxy counts, for the API as well as for xTIPP's own redirect to the `https` address. Without the setting, `X-Forwarded-Proto` is ignored, and the web server must pass the server variable `HTTPS` to PHP, for example `fastcgi_param HTTPS on;` (nginx) or `SetEnvIf X-Forwarded-Proto https HTTPS=on` (Apache).
+- Only list the real proxies in `TRUSTED_PROXIES`. With `*` and a site that can also be reached without the proxy, a client can send `X-Forwarded-Proto: https` over plain HTTP and pass the HTTPS check.
 - Answers of the API set no cookie. Cookies that xTIPP sets itself on every request (e.g. `xtipp-current-league-id`) are removed from API answers.
 - Answers of the API are marked `Cache-Control: no-store, private`.
+- Since xTIPP 1.0.36, xTIPP adds its security headers to every answer, also of the API: `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` and, with an `https://` domain, `Strict-Transport-Security`. The key page and Swagger UI therefore use no inline scripts.
 - A new key is shown directly in the answer of the form (`Cache-Control: no-store`). It is never written to the session, which xTIPP stores unencrypted.
 - There are no CORS headers. Browser applications on another address cannot call the API.
 - Swagger UI is delivered by the plugin (no CDN, no third-party requests). It is the unchanged `swagger-ui-dist` 5.34.1 (Apache License 2.0, see `resources/swagger-ui/LICENSE`).
@@ -126,7 +132,7 @@ Status codes: `200`/`201`/`204` success, `401` key missing or invalid, `403` fun
 ## Limitations
 
 - Not covered: the bonus overview (answers of other users), tip groups, messages, news, profiles, administration.
-- The API depends on internal classes of xTIPP and is pinned to 1.0.35. Check it after an update of xTIPP.
+- The API depends on internal classes of xTIPP and is pinned to 1.0.36. Check it after an update of xTIPP.
 - A key has the full rights of its user, there are no scopes.
 
 ## Removing the plugin

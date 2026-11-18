@@ -12,15 +12,19 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class DocsController extends Controller {
     /**
-     * Files of Swagger UI which are delivered, with their content type. Nothing else is read from the directory, so
+     * Files which are delivered, with their path below "resources" and their content type. Nothing else is read, so
      * the name of a file in the address can not be used to read other files.
      *
-     * @var array<string, string>
+     * xTIPP sends a Content-Security-Policy, which blocks inline scripts and event attributes. Every script of the
+     * plugin is therefore a file delivered here.
+     *
+     * @var array<string, array{0: string, 1: string}>
      */
     public const ASSETS = [
-        'swagger-ui.css'       => 'text/css; charset=utf-8',
-        'swagger-ui-bundle.js' => 'application/javascript; charset=utf-8',
-        'docs.js'              => 'application/javascript; charset=utf-8',
+        'swagger-ui.css'       => ['swagger-ui/swagger-ui.css', 'text/css; charset=utf-8'],
+        'swagger-ui-bundle.js' => ['swagger-ui/swagger-ui-bundle.js', 'application/javascript; charset=utf-8'],
+        'docs.js'              => ['swagger-ui/docs.js', 'application/javascript; charset=utf-8'],
+        'keys.js'              => ['js/keys.js', 'application/javascript; charset=utf-8'],
     ];
 
     /**
@@ -51,8 +55,8 @@ class DocsController extends Controller {
     }
 
     /**
-     * CSS and JavaScript of Swagger UI. The web root is "public", the files of a plugin are outside, so they are
-     * delivered here.
+     * CSS and JavaScript of Swagger UI and of the key page. The web root is "public", the files of a plugin are
+     * outside, so they are delivered here.
      *
      * @param string $file
      *
@@ -63,8 +67,10 @@ class DocsController extends Controller {
             abort(404);
         }
 
-        return response()->file(__DIR__ . '/../../../resources/swagger-ui/' . $file, [
-            'Content-Type'           => self::ASSETS[$file],
+        [$path, $contentType] = self::ASSETS[$file];
+
+        return response()->file(__DIR__ . '/../../../resources/' . $path, [
+            'Content-Type'           => $contentType,
             'Cache-Control'          => 'private, max-age=86400',
             'X-Content-Type-Options' => 'nosniff',
         ]);
