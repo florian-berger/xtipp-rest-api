@@ -62,8 +62,11 @@ class AuthenticateApiKey {
             return $this->unauthorized();
         }
 
-        // Maintenance mode: like the web, only admins may continue
-        if (app()->maintenanceMode()->active() && !$user->hasRole('Admin')) {
+        // Maintenance mode: like the web, only admins may continue. The maintenance must also be enabled in the
+        // settings: when the admin disables it, xTIPP switches it off only with the next request of the website
+        // (CheckForMaintenanceMode), until then the API is available already.
+        if (app()->maintenanceMode()->active() && (int) config('xtipp.maintenance-mode-enable', 0) === 1
+            && !$user->hasRole('Admin')) {
             return response()->json(['message' => 'The service is in maintenance mode.'], 503);
         }
 
