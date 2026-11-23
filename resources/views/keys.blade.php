@@ -33,9 +33,13 @@
         {{-- The page is the answer of a POST request: keys.js changes the address to "data-page-url", so a reload shows the key page (without the key) and does not send the form again --}}
         <div id="rest-api-new-key-box" class="mt-5 p-3 bg-slate-200" data-page-url="{{ route('plugin-rest-api.keys') }}">
             <div class="font-bold">{{ trans('rest-api::ui.keys.new-title') }}</div>
-            <div class="flex flex-wrap items-center gap-2 mt-2">
-                <input id="rest-api-new-key" type="text" class="input-normal-gray w-full md:w-3/4 font-mono" value="{{ $newKey }}" readonly autocomplete="off" spellcheck="false">
-                <button id="rest-api-copy-key" type="button" class="btn-small">{{ trans('rest-api::ui.keys.btn.copy') }}</button>
+            {{-- Same layout as the password field and its button in the login form of xTIPP: "password-toggle" only gives the look, xTIPP binds its script to "data-password-toggle" --}}
+            <div class="flex gap-2 mt-2">
+                <input id="rest-api-new-key" type="text" class="input-normal-gray font-mono" value="{{ $newKey }}" readonly autocomplete="off" spellcheck="false">
+                <button id="rest-api-copy-key" type="button" class="password-toggle">
+                    <i class="fa fa-copy" aria-hidden="true"></i>
+                    {{ trans('rest-api::ui.keys.btn.copy') }}
+                </button>
             </div>
             <p class="mt-2 text-sm">{{ trans('rest-api::ui.keys.new-hint') }}</p>
         </div>
