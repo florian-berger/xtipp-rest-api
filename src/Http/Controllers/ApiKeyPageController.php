@@ -3,6 +3,7 @@ namespace FlorianBerger\RestApi\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use FlorianBerger\RestApi\Services\ApiAccess;
 use FlorianBerger\RestApi\Services\ApiKeyService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -16,19 +17,25 @@ use Illuminate\Support\Facades\Auth;
 class ApiKeyPageController extends Controller {
     /**
      * @param ApiKeyService $keys
+     * @param ApiAccess     $access
      */
-    public function __construct(private readonly ApiKeyService $keys) {
+    public function __construct(
+        private readonly ApiKeyService $keys,
+        private readonly ApiAccess $access,
+    ) {
     }
 
     /**
-     * Show the key of the user (never the secret, it is only shown in the answer of create/regenerate)
+     * Show the key of the user (never the secret, it is only shown in the answer of create/regenerate). Users without
+     * access to the API see a note, and can only revoke or delete an existing key.
      *
      * @return View
      */
     public function index(): View {
         return view('rest-api::keys', [
-            'apiKey' => $this->keys->findForUser(Auth::user()),
-            'newKey' => null,
+            'apiKey'  => $this->keys->findForUser(Auth::user()),
+            'newKey'  => null,
+            'allowed' => $this->access->allows(Auth::user()),
         ]);
     }
 
@@ -40,6 +47,10 @@ class ApiKeyPageController extends Controller {
      * @return RedirectResponse|Response
      */
     public function create(Request $request): RedirectResponse|Response {
+        if (!$this->access->allows(Auth::user())) {
+            return $this->back('message-danger', trans('rest-api::ui.message.not-allowed'));
+        }
+
         $expiresAt = $this->expiryFromRequest($request);
 
         $key = $this->keys->create(Auth::user(), $expiresAt);
@@ -58,6 +69,10 @@ class ApiKeyPageController extends Controller {
      * @return RedirectResponse|Response
      */
     public function regenerate(Request $request): RedirectResponse|Response {
+        if (!$this->access->allows(Auth::user())) {
+            return $this->back('message-danger', trans('rest-api::ui.message.not-allowed'));
+        }
+
         $expiresAt = $this->expiryFromRequest($request);
 
         $key = $this->keys->regenerate(Auth::user(), $expiresAt);
@@ -136,8 +151,9 @@ class ApiKeyPageController extends Controller {
 
         return response()
             ->view('rest-api::keys', [
-                'apiKey' => $this->keys->findForUser(Auth::user()),
-                'newKey' => $newKey,
+                'apiKey'  => $this->keys->findForUser(Auth::user()),
+                'newKey'  => $newKey,
+                'allowed' => true,
             ])
             ->header('Cache-Control', 'no-store, private')
             ->header('Pragma', 'no-cache');

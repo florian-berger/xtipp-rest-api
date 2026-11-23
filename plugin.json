@@ -25,6 +25,18 @@
             "help": "Höchstzahl der Anfragen pro Minute und API-Schlüssel (Standardwert: 60). Weitere Anfragen werden mit 429 abgelehnt."
         },
         {
+            "key": "allowed_users",
+            "label": "API-Zugriff erlauben für",
+            "type": "select",
+            "options": {
+                "all": "Alle Benutzer",
+                "admins": "Nur Administratoren",
+                "role": "Nur ausgewählte Mitglieder (Rolle \"API-Benutzer\")"
+            },
+            "default": "all",
+            "help": "Wer API-Schlüssel erstellen, die API aufrufen und die Dokumentation öffnen darf. Die Rolle \"API-Benutzer\" wird in der Benutzerverwaltung vergeben, bei \"Nur ausgewählte Mitglieder\" benötigen auch Administratoren die Rolle. Vorhandene Schlüssel von Benutzern ohne Zugriff funktionieren nicht mehr, bleiben aber erhalten und gelten wieder, sobald der Zugriff erlaubt wird."
+        },
+        {
             "key": "require_https",
             "label": "Nur HTTPS erlauben",
             "type": "checkbox",

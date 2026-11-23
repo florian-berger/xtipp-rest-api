@@ -2,6 +2,7 @@
 namespace FlorianBerger\RestApi\Http\Middleware;
 
 use Closure;
+use FlorianBerger\RestApi\Services\ApiAccess;
 use FlorianBerger\RestApi\Services\ApiKeyService;
 use FlorianBerger\RestApi\Services\PluginSettings;
 use Illuminate\Http\JsonResponse;
@@ -20,10 +21,12 @@ class AuthenticateApiKey {
     /**
      * @param ApiKeyService  $keys
      * @param PluginSettings $settings
+     * @param ApiAccess      $access
      */
     public function __construct(
         private readonly ApiKeyService $keys,
         private readonly PluginSettings $settings,
+        private readonly ApiAccess $access,
     ) {
     }
 
@@ -45,8 +48,9 @@ class AuthenticateApiKey {
             }
         }
 
-        // Inactive or deleted users can not use the API (the web middleware "IsActive" does not run here)
-        if ($user === null || $user->trashed() || !$user->active) {
+        // Inactive or deleted users can not use the API (the web middleware "IsActive" does not run here), neither
+        // users without access (setting "allowed_users"). Their keys stay, and work again when access is allowed.
+        if ($user === null || $user->trashed() || !$user->active || !$this->access->allows($user)) {
             // Slow down guessing. Only failed attempts are limited, so that other users behind the same address
             // can not lock out a valid key. A valid key never resets the counter, otherwise calls with an own
             // key could be mixed in to bypass the limit.

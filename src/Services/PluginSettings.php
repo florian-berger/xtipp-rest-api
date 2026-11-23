@@ -17,6 +17,11 @@ class PluginSettings {
     private const MIN_RATE_LIMIT = 1;
     private const MAX_RATE_LIMIT = 10000;
 
+    /** Values of the setting "allowed_users", the same as "options" in plugin.json */
+    public const ALLOWED_ALL    = 'all';
+    public const ALLOWED_ADMINS = 'admins';
+    public const ALLOWED_ROLE   = 'role';
+
     /**
      * @param PluginManager $plugins
      */
@@ -44,5 +49,17 @@ class PluginSettings {
      */
     public function requireHttps(): bool {
         return $this->plugins->setting(self::PLUGIN, 'require_https', true) !== false;
+    }
+
+    /**
+     * Which users may use the API (all users, unless the administrator restricted it). An unknown value counts as
+     * "all", like the default.
+     *
+     * @return string One of the constants ALLOWED_*
+     */
+    public function allowedUsers(): string {
+        $value = (string) $this->plugins->setting(self::PLUGIN, 'allowed_users', self::ALLOWED_ALL);
+
+        return in_array($value, [self::ALLOWED_ADMINS, self::ALLOWED_ROLE], true) ? $value : self::ALLOWED_ALL;
     }
 }

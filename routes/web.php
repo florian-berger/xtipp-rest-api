@@ -18,10 +18,12 @@ Route::middleware(['web'])->group(function () {
     });
 
     /**
-     * Logged-in users: Swagger UI, its description of the API and its CSS/JavaScript (the files of a plugin are not in
-     * the web root, so they are delivered by a route)
+     * Logged-in users with access to the API (setting "allowed_users"): Swagger UI, its description of the API and its
+     * CSS/JavaScript (the files of a plugin are not in the web root, so they are delivered by a route). The script of
+     * the key page is delivered here, too: it is only needed after a key was created or regenerated, which requires
+     * access as well.
      */
-    Route::middleware(['auth', 'last_activity'])->prefix('api/docs')->group(function () {
+    Route::middleware(['auth', 'last_activity', 'rest-api.access'])->prefix('api/docs')->group(function () {
         Route::get('/', [DocsController::class, 'index'])->name('plugin-rest-api.docs');
         Route::get('openapi.json', [DocsController::class, 'spec'])->name('plugin-rest-api.docs.spec');
         Route::get('assets/{file}', [DocsController::class, 'asset'])->name('plugin-rest-api.docs.asset');
