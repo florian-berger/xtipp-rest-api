@@ -21,7 +21,8 @@ The interface of the plugin (key page) is in German, like xTIPP itself. The API 
 - Read the bonus questions and give, change and delete your own answers, with the same rules as the bonus page (deadline, clubs/players which can be chosen, number of answers).
 - Authentication with a personal API key as Bearer token. No username and password, no session, no cookie.
 - Every user has one key and manages it on an own page: create, regenerate, revoke, delete. An optional expiry date can be set.
-- Swagger UI with the complete description of the API, for logged-in users only. All calls can be tried out there.
+- The administrator decides who may use the API: all users, only administrators or only members of the role `API-Benutzer`.
+- Swagger UI with the complete description of the API, only for logged-in users with access to the API. All calls can be tried out there.
 
 ## Installation
 
@@ -29,8 +30,8 @@ The interface of the plugin (key page) is in German, like xTIPP itself. The API 
    Alternatively upload the ZIP of a release (`rest-api-<version>.zip`) in the admin area under **Konfiguration → Erweiterungen**.
    xTIPP 1.0.36 offers this only when `XTIPP_PLUGIN_UPLOAD=1` is set in its `.env` file. Uploading a newer ZIP also updates
    the plugin, and the old version is kept in `storage/app/plugin-backups/`.
-2. Activate it in the admin area under **Konfiguration → Erweiterungen**. This runs the migration, which creates the table `plugin_rest_api_keys`.
-3. Logged-in users find the key page `/api-schluessel` in their profile menu ("API-Schlüssel"), no link has to be added.
+2. Activate it in the admin area under **Konfiguration → Erweiterungen**. This runs the migrations, which create the table `plugin_rest_api_keys` and the role `API-Benutzer`.
+3. Logged-in users with access to the API find the key page `/api-schluessel` in their profile menu ("API-Schlüssel"), no link has to be added.
 
 Settings (admin area, **Konfiguration → Erweiterungen**, settings of the plugin):
 
@@ -38,6 +39,7 @@ Settings (admin area, **Konfiguration → Erweiterungen**, settings of the plugi
 |---|---|---|
 | Anfragen pro Minute (`rate_limit`) | 60 | Maximum number of requests per minute and API key (1 to 10000). More requests answer `429`. |
 | Nur HTTPS erlauben (`require_https`) | on | Requests over plain HTTP answer `403` before the API key is processed. Disable it only if your setup cannot pass `HTTPS=on` to PHP (see security notes). |
+| API-Zugriff erlauben für (`allowed_users`) | Alle Benutzer (`all`) | Who may create keys, call the API and open Swagger UI: all users (`all`), only administrators (`admins`) or only members of the role `API-Benutzer` (`role`). See [Access to the API](#access-to-the-api). |
 
 To switch the API off, disable the plugin.
 
@@ -45,11 +47,21 @@ To switch the API off, disable the plugin.
 
 | Address | Who | Purpose |
 |---|---|---|
-| `/api-schluessel` | logged-in users | Create, regenerate, revoke and delete the own API key (entry "API-Schlüssel" in the profile menu) |
-| `/api/docs` | logged-in users | Swagger UI |
-| `/api/docs/openapi.json` | logged-in users | The OpenAPI description |
-| `/api/docs/assets/{file}` | logged-in users | CSS/JavaScript of Swagger UI and the script of the key page (the web root is `public/`, so the files of a plugin are delivered by a route; xTIPP blocks inline scripts with its Content-Security-Policy) |
+| `/api-schluessel` | logged-in users (users without access to the API can only revoke and delete an existing key) | Create, regenerate, revoke and delete the own API key (entry "API-Schlüssel" in the profile menu) |
+| `/api/docs` | logged-in users with access to the API | Swagger UI |
+| `/api/docs/openapi.json` | logged-in users with access to the API | The OpenAPI description |
+| `/api/docs/assets/{file}` | logged-in users with access to the API | CSS/JavaScript of Swagger UI and the script of the key page (the web root is `public/`, so the files of a plugin are delivered by a route; xTIPP blocks inline scripts with its Content-Security-Policy) |
 | `/api/v1/...` | holders of a key | The API |
+
+## Access to the API
+
+The setting `allowed_users` decides who may use the API:
+
+- **Alle Benutzer** (`all`, default): every active user.
+- **Nur Administratoren** (`admins`): only users with the role `Admin`.
+- **Nur ausgewählte Mitglieder** (`role`): only the users with the role `API-Benutzer`. Administrators need the role, too. The role is created when the plugin is activated; assign it in the admin area in the user management (edit a user, roles).
+
+Users without access do not see the entry "API-Schlüssel" in the profile menu, cannot create or regenerate a key and cannot open Swagger UI (`404`). An existing key of such a user is **not deleted**: it answers `401` as long as the user has no access and works again as soon as access is allowed (setting changed or role assigned). The user can still open `/api-schluessel` by its address to revoke or delete the key.
 
 ## Authentication
 
@@ -62,8 +74,8 @@ curl -H "Authorization: Bearer xtk_..." https://your-site/api/v1/leagues
 
 - A user has exactly one key. *Revoke* stops it (the entry stays visible), *regenerate* replaces the secret and starts the key again, *delete* removes it so that a new one can be created.
 - A key has no expiry unless you set a date. A leaked key works until you revoke, regenerate or delete it.
-- Inactive and deleted users cannot use the API, even with a valid key.
-- Unknown, revoked and expired keys all get the same `401` answer.
+- Inactive and deleted users cannot use the API, even with a valid key. The same applies to users without access to the API (setting `allowed_users`).
+- Unknown, revoked and expired keys, and keys of users without access, all get the same `401` answer.
 
 ## Endpoints
 
@@ -141,12 +153,6 @@ Deactivating the plugin does **not** run `down()` of the migration, and tables s
 To remove everything:
 
 1. Deactivate the plugin.
-2. Optional: `php artisan migrate:rollback --path=plugins/rest-api/database/migrations --realpath --force` (drops both tables and all connections; run it before deleting the folder).
+2. Optional: `php artisan migrate:rollback --path=plugins/rest-api/database/migrations --realpath --force` (drops the table of the keys and removes the role `API-Benutzer` with its assignments; run it before deleting the folder).
 3. Delete `plugins/rest-api/`.
 4. If you kept the tables and want a clean state, remove the migration row from the `migrations` table.
-
-## AI disclaimer
-
-While writing this, I am not forced to write this AI disclaimer based on the rules of the European Union. But to be fully transparent, I write the following paragraph.
-
-Developing this plugin was assisted by AI, specific **Claude Code** by **Anthropic**. The used model was **Claude Sonnect 5.5**. AI assisted means that a human designed the approach and AI helped building it.
