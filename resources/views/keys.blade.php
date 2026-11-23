@@ -8,16 +8,26 @@
         {{ trans('rest-api::ui.keys.title') }}
     </div>
 
-    <p class="mt-2">
-        {!! trans('rest-api::ui.keys.intro') !!}
-        {!! trans('rest-api::ui.keys.docs', [
-            'link' => '<a href="' . e(route('plugin-rest-api.docs')) . '" class="link-normal">' . e(trans('rest-api::ui.keys.docs-link')) . '</a>',
-        ]) !!}
-    </p>
-    {{-- Same look as the warnings of xTIPP (layouts.messages), only classes of the CSS of xTIPP are available --}}
-    <div id="api-key-secure-warning" class="w-full px-2 py-2 mt-4 bg-yellow-400" role="note">
-        <strong>{{ trans('rest-api::ui.keys.warning-title') }}</strong> {{ trans('rest-api::ui.keys.warning') }}
-    </div>
+    @if ($allowed)
+        <p class="mt-2">
+            {!! trans('rest-api::ui.keys.intro') !!}
+            {!! trans('rest-api::ui.keys.docs', [
+                'link' => '<a href="' . e(route('plugin-rest-api.docs')) . '" class="link-normal">' . e(trans('rest-api::ui.keys.docs-link')) . '</a>',
+            ]) !!}
+        </p>
+        {{-- Same look as the warnings of xTIPP (layouts.messages), only classes of the CSS of xTIPP are available --}}
+        <div id="api-key-secure-warning" class="w-full px-2 py-2 mt-4 bg-yellow-400" role="note">
+            <strong>{{ trans('rest-api::ui.keys.warning-title') }}</strong> {{ trans('rest-api::ui.keys.warning') }}
+        </div>
+    @else
+        {{-- Setting "allowed_users": no new key, but an existing one can still be revoked or deleted --}}
+        <div id="api-key-not-allowed" class="w-full px-2 py-2 mt-4 bg-yellow-400" role="note">
+            {{ trans('rest-api::ui.keys.not-allowed') }}
+            @if ($apiKey !== null)
+                {{ trans('rest-api::ui.keys.not-allowed-key') }}
+            @endif
+        </div>
+    @endif
 
     @if ($newKey !== null)
         {{-- The page is the answer of a POST request: keys.js changes the address to "data-page-url", so a reload shows the key page (without the key) and does not send the form again --}}
@@ -33,7 +43,9 @@
         <script src="{{ route('plugin-rest-api.docs.asset', ['file' => 'keys.js']) }}"></script>
     @endif
 
-    @if ($apiKey === null)
+    @if ($apiKey === null && !$allowed)
+        {{-- Nothing to manage --}}
+    @elseif ($apiKey === null)
         <p class="mt-5">{{ trans('rest-api::ui.keys.none') }}</p>
 
         <form method="POST" action="{{ route('plugin-rest-api.keys.create') }}" class="mt-2">
@@ -74,24 +86,26 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('plugin-rest-api.keys.regenerate') }}" class="mt-5"
-              data-confirm="{{ trans('rest-api::ui.keys.confirm.regenerate') }}"
-              data-confirm-title="{{ trans('rest-api::ui.keys.btn.regenerate') }}"
-              data-confirm-button="{{ trans('rest-api::ui.keys.btn.regenerate') }}">
-            {{ csrf_field() }}
+        @if ($allowed)
+            <form method="POST" action="{{ route('plugin-rest-api.keys.regenerate') }}" class="mt-5"
+                  data-confirm="{{ trans('rest-api::ui.keys.confirm.regenerate') }}"
+                  data-confirm-title="{{ trans('rest-api::ui.keys.btn.regenerate') }}"
+                  data-confirm-button="{{ trans('rest-api::ui.keys.btn.regenerate') }}">
+                {{ csrf_field() }}
 
-            <div class="w-full md:w-1/2{{ $errors->has('expires_at') ? ' has-error' : '' }}">
-                <label for="expires_at" class="label-normal-gray">{{ trans('rest-api::ui.keys.expires') }}</label>
-                <input id="expires_at" type="date" class="input-normal-gray" name="expires_at"
-                       value="{{ old('expires_at', $apiKey->expires_at?->format('Y-m-d')) }}"
-                       @if ($errors->has('expires_at')) aria-invalid="true" @endif>
-                <span class="text-sm text-gray-500">{{ trans('rest-api::ui.keys.expires-hint') }}</span>
-            </div>
+                <div class="w-full md:w-1/2{{ $errors->has('expires_at') ? ' has-error' : '' }}">
+                    <label for="expires_at" class="label-normal-gray">{{ trans('rest-api::ui.keys.expires') }}</label>
+                    <input id="expires_at" type="date" class="input-normal-gray" name="expires_at"
+                           value="{{ old('expires_at', $apiKey->expires_at?->format('Y-m-d')) }}"
+                           @if ($errors->has('expires_at')) aria-invalid="true" @endif>
+                    <span class="text-sm text-gray-500">{{ trans('rest-api::ui.keys.expires-hint') }}</span>
+                </div>
 
-            <div class="mt-2">
-                <button type="submit" class="btn-normal bg-emerald-500 md:w-max">{{ trans('rest-api::ui.keys.btn.regenerate') }}</button>
-            </div>
-        </form>
+                <div class="mt-2">
+                    <button type="submit" class="btn-normal bg-emerald-500 md:w-max">{{ trans('rest-api::ui.keys.btn.regenerate') }}</button>
+                </div>
+            </form>
+        @endif
 
         <div class="mt-5 flex flex-wrap gap-2">
             @if (!$apiKey->isRevoked())

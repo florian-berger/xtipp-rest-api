@@ -7,6 +7,7 @@ return [
         'deleted'     => 'Dein API-Schlüssel wurde gelöscht.',
         'exists'      => 'Du hast bereits einen API-Schlüssel.',
         'missing'     => 'Du hast keinen API-Schlüssel.',
+        'not-allowed' => 'Die API ist für dein Benutzerkonto nicht freigeschaltet.',
     ],
 
     'keys' => [
@@ -20,6 +21,8 @@ return [
         'new-title'  => 'Dein neuer Schlüssel',
         'new-hint'   => 'Dieser Schlüssel wird nur jetzt angezeigt. Danach ist nur noch der Anfang sichtbar.',
         'none'       => 'Du hast noch keinen API-Schlüssel.',
+        'not-allowed' => 'Die API ist für dein Benutzerkonto nicht freigeschaltet. Wende dich an einen Administrator, wenn du sie verwenden möchtest.',
+        'not-allowed-key' => 'Dein vorhandener Schlüssel funktioniert nicht, solange die API für dich nicht freigeschaltet ist. Du kannst ihn sperren oder löschen.',
         'key'        => 'Schlüssel',
         'created'    => 'Erstellt',
         'last-used'  => 'Zuletzt verwendet',

@@ -26,7 +26,7 @@ return new class extends Migration
             DB::table('roles')->insert([
                 'name'         => self::ROLE,
                 'display_name' => self::ROLE,
-                'description'  => 'Darf die REST-API verwenden',
+                'description'  => 'Darf die REST-API verwenden. Nur relevant, wenn die Einstellung "Nur ausgewählte Mitglieder" gewählt ist.',
                 'created_at'   => now(),
                 'updated_at'   => now(),
             ]);
